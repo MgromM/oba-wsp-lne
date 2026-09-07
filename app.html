@@ -320,9 +320,81 @@
   }
   .remote-dot.michal{ border:1.5px solid var(--michal); }
   .remote-dot.ona{ border:1.5px solid var(--ona); }
+
+  .onboard-overlay{
+    position:fixed; inset:0; z-index:100;
+    background:color-mix(in srgb, var(--ink) 45%, transparent);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .onboard-card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    padding:28px 24px;
+    max-width:420px;
+    width:100%;
+  }
+  .onboard-eyebrow{
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--michal); margin-bottom:8px;
+  }
+  .onboard-card h2{
+    font-family:'Fraunces', Georgia, serif; font-weight:600; font-size:22px;
+    margin:0 0 8px; text-wrap:balance;
+  }
+  .onboard-sub{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
+  .onboard-card select{
+    width:100%; padding:11px 10px; border-radius:9px; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); font-family:inherit; font-size:16px;
+  }
+  .onboard-actions{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:20px;
+  }
+  .onboard-actions .primary{ flex:1; }
+  .onboard-skip{
+    border:none; background:transparent; color:var(--ink-soft); font-family:inherit;
+    font-size:13.5px; text-decoration:underline; cursor:pointer; padding:8px;
+  }
 </style>
 </head>
 <body>
+<div class="onboard-overlay" id="onboardOverlay" hidden>
+  <div class="onboard-card">
+    <div class="onboard-step" id="obStep1">
+      <div class="onboard-eyebrow">Krok 1 z 2</div>
+      <h2>Zanim zaczniesz — jaka dieta?</h2>
+      <p class="onboard-sub">To pomoże wybrać restaurację, w której oboje coś zjecie.</p>
+      <select id="obDietType">
+        <option value="">Bez ograniczeń</option>
+        <option value="wege">Wegetariańska</option>
+        <option value="wegan">Wegańska</option>
+        <option value="inne">Inne</option>
+      </select>
+      <div class="onboard-actions">
+        <button type="button" class="onboard-skip" id="obSkip1">Pomiń</button>
+        <button type="button" class="primary" id="obNext1">Dalej</button>
+      </div>
+    </div>
+
+    <div class="onboard-step" id="obStep2" hidden>
+      <div class="onboard-eyebrow">Krok 2 z 2</div>
+      <h2>Alergeny albo czego nie jesz</h2>
+      <p class="onboard-sub">Dodaj tyle, ile potrzebujesz — jeden na raz.</p>
+      <div class="tag-input-row">
+        <input type="text" id="obAllergenInput" maxlength="30" placeholder="np. orzechy">
+        <button type="button" class="tag-add" id="obAllergenAddBtn">Dodaj</button>
+      </div>
+      <div class="tag-list" id="obAllergenTags"></div>
+      <div class="onboard-actions">
+        <button type="button" class="onboard-skip" id="obSkip2">Pomiń</button>
+        <button type="button" class="primary" id="obFinish">Zapisz i przejdź dalej</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
   <header>
     <h1>Termin na kolację</h1>
@@ -457,6 +529,29 @@ function setWho(person){
   document.getElementById('btn-michal').setAttribute('data-active', person==='michal');
   document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
   fillDietForm();
+  maybeShowOnboarding();
+}
+
+function onboardKey(person){ return 'kolacja_onboarded_' + person; }
+
+function maybeShowOnboarding(){
+  if(!me) return;
+  if(localStorage.getItem(onboardKey(me))) return;
+  showOnboarding();
+}
+
+function finishOnboarding(){
+  localStorage.setItem(onboardKey(me), '1');
+  document.getElementById('onboardOverlay').hidden = true;
+}
+
+function showOnboarding(){
+  document.getElementById('obDietType').value = '';
+  obPendingAllergens = [];
+  renderObAllergenTags();
+  document.getElementById('obStep1').hidden = false;
+  document.getElementById('obStep2').hidden = true;
+  document.getElementById('onboardOverlay').hidden = false;
 }
 
 let pendingAllergens = [];
@@ -495,6 +590,58 @@ document.getElementById('allergenAddBtn').addEventListener('click', addAllergenF
 document.getElementById('allergenInput').addEventListener('keydown', (e)=>{
   if(e.key==='Enter'){ e.preventDefault(); addAllergenFromInput(); }
 });
+
+let obPendingAllergens = [];
+
+function renderObAllergenTags(){
+  const el = document.getElementById('obAllergenTags');
+  el.innerHTML = obPendingAllergens.map((a,i)=>`
+    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">×</button></span>
+  `).join('');
+  el.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      obPendingAllergens.splice(Number(btn.dataset.i), 1);
+      renderObAllergenTags();
+    });
+  });
+}
+
+function addObAllergenFromInput(){
+  const input = document.getElementById('obAllergenInput');
+  const val = input.value.trim();
+  if(!val) return;
+  if(!obPendingAllergens.some(a=>a.toLowerCase()===val.toLowerCase())) obPendingAllergens.push(val);
+  input.value = '';
+  renderObAllergenTags();
+  input.focus();
+}
+
+document.getElementById('obAllergenAddBtn').addEventListener('click', addObAllergenFromInput);
+document.getElementById('obAllergenInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); addObAllergenFromInput(); }
+});
+
+document.getElementById('obNext1').addEventListener('click', ()=>{
+  document.getElementById('obStep1').hidden = true;
+  document.getElementById('obStep2').hidden = false;
+  document.getElementById('obAllergenInput').focus();
+});
+document.getElementById('obSkip1').addEventListener('click', finishOnboarding);
+document.getElementById('obSkip2').addEventListener('click', finishOnboarding);
+
+document.getElementById('obFinish').addEventListener('click', async ()=>{
+  addObAllergenFromInput();
+  const diet = document.getElementById('obDietType').value;
+  const allergens = [...obPendingAllergens];
+  const profile = { person: me, diet, allergens, updatedAt: Date.now() };
+  profiles[me] = profile;
+  renderDiets();
+  fillDietForm();
+  finishOnboarding();
+  try{ await setDoc(doc(firestore, 'profiles', me), profile); }
+  catch(err){ setStatus('Nie zapisano preferencji na serwerze — możesz je poprawić niżej.'); }
+});
+
 document.getElementById('btn-michal').addEventListener('click', ()=>setWho('michal'));
 document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
 if(me) setWho(me);
