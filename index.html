@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Termin na kolację</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --paper:#faf6f0;
+    --paper-raised:#ffffff;
+    --ink:#2b2630;
+    --ink-soft:#6b6270;
+    --line:#e7ddd0;
+    --michal:#2f6f62;
+    --michal-bg:#e3efe9;
+    --ona:#b8365f;
+    --ona-bg:#f8e6ec;
+    --both-bg:#fff2c7;
+    --both-line:#d8ab2b;
+    --danger:#b8365f;
+    --shadow: 0 1px 2px rgba(43,38,48,.06), 0 6px 20px rgba(43,38,48,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1c1a1f;
+      --paper-raised:#262330;
+      --ink:#ede8f0;
+      --ink-soft:#a89fb0;
+      --line:#3a3542;
+      --michal:#6fcbb3;
+      --michal-bg:#22332e;
+      --ona:#f292b3;
+      --ona-bg:#3a2530;
+      --both-bg:#4a3d1a;
+      --both-line:#c9a331;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1c1a1f;
+    --paper-raised:#262330;
+    --ink:#ede8f0;
+    --ink-soft:#a89fb0;
+    --line:#3a3542;
+    --michal:#6fcbb3;
+    --michal-bg:#22332e;
+    --ona:#f292b3;
+    --ona-bg:#3a2530;
+    --both-bg:#4a3d1a;
+    --both-line:#c9a331;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+  }
+  .wrap{
+    max-width:980px;
+    margin:0 auto;
+    padding:36px 20px 80px;
+  }
+  header{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:28px;
+  }
+  h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size:clamp(28px,4vw,38px);
+    margin:0;
+    text-wrap:balance;
+    letter-spacing:-.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14.5px;
+  }
+
+  .whoami{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+  }
+  .whoami span{ color:var(--ink-soft); font-size:13.5px; text-transform:uppercase; letter-spacing:.06em; }
+  .who-btn{
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    color:var(--ink);
+    padding:7px 14px;
+    border-radius:999px;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .who-btn[data-active="true"][data-person="michal"]{ border-color:var(--michal); background:var(--michal-bg); color:var(--michal); }
+  .who-btn[data-active="true"][data-person="ona"]{ border-color:var(--ona); background:var(--ona-bg); color:var(--ona); }
+
+  .grid{
+    display:grid;
+    grid-template-columns: minmax(0,1.5fr) minmax(260px,1fr);
+    gap:24px;
+    align-items:start;
+  }
+  @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:20px;
+  }
+  .card + .card{ margin-top:20px; }
+
+  .card h2{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:18px;
+    font-weight:600;
+    margin:0 0 14px;
+  }
+
+  form.trip{ display:flex; flex-direction:column; gap:12px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  label{ font-size:12.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:4px; }
+  input[type="date"], input[type="text"]{
+    width:100%;
+    padding:9px 10px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+  }
+  input:focus-visible, button:focus-visible, .who-btn:focus-visible{ outline:2px solid var(--michal); outline-offset:2px; }
+  button.primary{
+    border:none;
+    background:var(--ink);
+    color:var(--paper);
+    padding:10px 16px;
+    border-radius:9px;
+    font-family:inherit;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    align-self:flex-start;
+  }
+  [data-theme="dark"] button.primary, :root:not([data-theme="light"]) button.primary { }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) button.primary{ background:var(--michal); color:#12211c; }
+  }
+  :root[data-theme="dark"] button.primary{ background:var(--michal); color:#12211c; }
+
+  .trip-list{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+  .trip-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .dot.michal{ background:var(--michal); }
+  .dot.ona{ background:var(--ona); }
+  .trip-meta{ flex:1; min-width:0; }
+  .trip-dates{ font-variant-numeric:tabular-nums; font-weight:600; }
+  .trip-loc{ color:var(--ink-soft); }
+  .del{
+    border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
+    font-size:16px; line-height:1; padding:2px 6px; border-radius:6px;
+  }
+  .del:hover{ color:var(--danger); }
+  .empty{ color:var(--ink-soft); font-size:13.5px; padding:6px 2px; }
+
+  .months{ display:flex; flex-direction:column; gap:22px; }
+  .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .month-nav button{
+    border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:15px;
+  }
+  .month-title{ font-family:'Fraunces',serif; font-weight:600; font-size:17px; text-transform:capitalize; }
+
+  table.cal{ width:100%; border-collapse:collapse; table-layout:fixed; }
+  table.cal th{
+    font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;
+    font-weight:600; padding:4px 2px 8px;
+  }
+  table.cal td{ padding:3px; vertical-align:top; }
+  .day{
+    position:relative;
+    min-height:52px;
+    border-radius:9px;
+    border:1px solid transparent;
+    padding:5px 6px;
+    font-variant-numeric:tabular-nums;
+    font-size:13px;
+  }
+  .day.pad{ visibility:hidden; }
+  .day.past{ opacity:.35; }
+  .day .num{ font-weight:600; }
+  .day.free{ background:var(--both-bg); border-color:var(--both-line); }
+  .day.free .num::after{ content:" 🍽"; font-size:11px; }
+  .day.busy-michal{ background:var(--michal-bg); }
+  .day.busy-ona{ background:var(--ona-bg); }
+  .day.busy-both{ background:linear-gradient(135deg, var(--michal-bg) 0 50%, var(--ona-bg) 50% 100%); }
+  .day-dots{ display:flex; gap:3px; margin-top:3px; }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; font-size:13px; color:var(--ink-soft); }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+  .legend i.free{ background:var(--both-bg); border:1px solid var(--both-line); }
+  .legend i.michal{ background:var(--michal-bg); border:1px solid var(--michal); }
+  .legend i.ona{ background:var(--ona-bg); border:1px solid var(--ona); }
+
+  .free-list{ display:flex; flex-direction:column; gap:6px; }
+  .free-list .free-item{
+    display:flex; justify-content:space-between; gap:8px;
+    padding:7px 10px; border-radius:9px; background:var(--both-bg); border:1px solid var(--both-line);
+    font-size:13.5px; font-weight:600;
+  }
+  .status{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; min-height:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Termin na kolację</h1>
+    <p>Ty jesteś w Warszawie, Agnieszka przyjeżdża z drugiego końca Polski — tu widać, kiedy oboje macie wolne.</p>
+  </header>
+
+  <div class="whoami">
+    <span>Jesteś:</span>
+    <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
+    <button class="who-btn" data-person="ona" id="btn-ona">Agnieszka</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Dodaj wyjazd / zajętość</h2>
+        <form class="trip" id="tripForm">
+          <div class="row2">
+            <div>
+              <label for="start">Od</label>
+              <input type="date" id="start" required>
+            </div>
+            <div>
+              <label for="end">Do</label>
+              <input type="date" id="end" required>
+            </div>
+          </div>
+          <div>
+            <label for="loc">Gdzie / co (opcjonalnie)</label>
+            <input type="text" id="loc" maxlength="60" placeholder="np. Kraków, wesele, delegacja...">
+          </div>
+          <button type="submit" class="primary" id="submitBtn">Dodaj</button>
+          <div class="status" id="status"></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Najbliższe wolne wieczory (oboje)</h2>
+        <div class="free-list" id="freeList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Wpisane terminy</h2>
+        <div class="trip-list" id="tripList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kalendarz</h2>
+      <div class="month-nav">
+        <button id="prevMonth" aria-label="Poprzedni miesiąc">‹</button>
+        <div class="month-title" id="monthTitle"></div>
+        <button id="nextMonth" aria-label="Następny miesiąc">›</button>
+      </div>
+      <div class="months" id="calendarRoot"></div>
+      <div class="legend">
+        <span><i class="free"></i>oboje wolni</span>
+        <span><i class="michal"></i>Michał zajęty</span>
+        <span><i class="ona"></i>Agnieszka zajęta</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, setDoc, deleteDoc,
+  getDocs, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBlAjb5gNcZfaHMBKglquZ4JD3lhBs1tao",
+  authDomain: "oba-wolne.firebaseapp.com",
+  projectId: "oba-wolne",
+  storageBucket: "oba-wolne.firebasestorage.app",
+  messagingSenderId: "542262689847",
+  appId: "1:542262689847:web:af9c318aa74843d8ab3fb2"
+};
+const fbApp = initializeApp(firebaseConfig);
+const firestore = getFirestore(fbApp);
+const tripsCol = collection(firestore, 'trips');
+
+const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
+const MONTH_NAMES = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
+
+let trips = [];
+let me = localStorage.getItem('kolacja_who') || null;
+let viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0);
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmt(d){ return d.toLocaleDateString('pl-PL', {day:'numeric', month:'long'}); }
+function parse(s){ const [y,m,day] = s.split('-').map(Number); return new Date(y, m-1, day); }
+function dateStr(d){ return d.toISOString().slice(0,10); }
+
+function setWho(person){
+  me = person;
+  localStorage.setItem('kolacja_who', person);
+  document.getElementById('btn-michal').setAttribute('data-active', person==='michal');
+  document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
+}
+document.getElementById('btn-michal').addEventListener('click', ()=>setWho('michal'));
+document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
+if(me) setWho(me);
+
+function isBusy(person, ymd){
+  return trips.some(t => t.person===person && ymd >= t.start && ymd <= t.end);
+}
+
+function renderTripList(){
+  const list = document.getElementById('tripList');
+  const sorted = [...trips].sort((a,b)=>a.start.localeCompare(b.start));
+  if(sorted.length===0){
+    list.innerHTML = '<div class="empty">Nikt jeszcze nic nie wpisał.</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(t => `
+    <div class="trip-item">
+      <span class="dot ${t.person}"></span>
+      <div class="trip-meta">
+        <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}</div>
+        ${t.loc ? `<div class="trip-loc">${escapeHtml(t.loc)}</div>` : ''}
+      </div>
+      <button class="del" data-id="${t.id}" aria-label="Usuń" ${me ? '' : 'disabled title="wybierz kim jesteś"'}>×</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteTrip(btn.dataset.id));
+  });
+}
+
+function renderFreeList(){
+  const el = document.getElementById('freeList');
+  const out = [];
+  let d = new Date(); d.setHours(0,0,0,0);
+  for(let i=0; i<60 && out.length<6; i++){
+    const ymd = dateStr(d);
+    if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  if(out.length===0){
+    el.innerHTML = '<div class="empty">Brak wspólnych wolnych dni w najbliższych 2 miesiącach.</div>';
+    return;
+  }
+  el.innerHTML = out.map(d => `<div class="free-item"><span>${d.toLocaleDateString('pl-PL',{weekday:'long'})}</span><span>${fmt(d)}</span></div>`).join('');
+}
+
+function buildMonthTable(monthDate){
+  const year = monthDate.getFullYear(), month = monthDate.getMonth();
+  const first = new Date(year, month, 1);
+  const startOffset = (first.getDay()+6)%7; // Monday=0
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = todayStr();
+
+  let cells = [];
+  for(let i=0;i<startOffset;i++) cells.push(null);
+  for(let d=1; d<=daysInMonth; d++) cells.push(d);
+  while(cells.length % 7 !== 0) cells.push(null);
+
+  let rows = '';
+  for(let r=0; r<cells.length; r+=7){
+    rows += '<tr>' + cells.slice(r, r+7).map(d=>{
+      if(d===null) return '<td><div class="day pad">0</div></td>';
+      const ymd = dateStr(new Date(year, month, d));
+      const busyM = isBusy('michal', ymd);
+      const busyO = isBusy('ona', ymd);
+      let cls = 'day';
+      if(ymd < today) cls += ' past';
+      if(busyM && busyO) cls += ' busy-both';
+      else if(busyM) cls += ' busy-michal';
+      else if(busyO) cls += ' busy-ona';
+      else if(ymd >= today) cls += ' free';
+      return `<td><div class="${cls}"><div class="num">${d}</div></div></td>`;
+    }).join('') + '</tr>';
+  }
+
+  return `
+    <table class="cal">
+      <thead><tr>${DAY_NAMES.map(n=>`<th>${n}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function renderCalendar(){
+  const root = document.getElementById('calendarRoot');
+  const m1 = new Date(viewMonth);
+  const m2 = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 1);
+  document.getElementById('monthTitle').textContent =
+    `${MONTH_NAMES[m1.getMonth()]} ${m1.getFullYear()}`;
+  root.innerHTML = `
+    <div>${buildMonthTable(m1)}</div>
+    <div><div class="month-title" style="margin-bottom:6px;text-transform:capitalize;">${MONTH_NAMES[m2.getMonth()]} ${m2.getFullYear()}</div>${buildMonthTable(m2)}</div>
+  `;
+}
+
+document.getElementById('prevMonth').addEventListener('click', ()=>{
+  viewMonth.setMonth(viewMonth.getMonth()-1); renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', ()=>{
+  viewMonth.setMonth(viewMonth.getMonth()+1); renderCalendar();
+});
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderAll(){
+  renderTripList();
+  renderFreeList();
+  renderCalendar();
+}
+
+async function deleteTrip(id){
+  trips = trips.filter(t=>t.id!==id);
+  renderAll();
+  try{ await deleteDoc(doc(firestore, 'trips', id)); }
+  catch(e){ setStatus('Nie udało się usunąć — spróbuj ponownie.'); }
+}
+
+function setStatus(msg){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  if(msg) setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; }, 3000);
+}
+
+document.getElementById('tripForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
+  const start = document.getElementById('start').value;
+  const end = document.getElementById('end').value;
+  const loc = document.getElementById('loc').value.trim();
+  if(!start || !end){ setStatus('Podaj obie daty.'); return; }
+  if(end < start){ setStatus('Data "do" musi być po dacie "od".'); return; }
+
+  const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  const trip = { id, person: me, start, end, loc, createdAt: Date.now() };
+  trips.push(trip);
+  renderAll();
+  e.target.reset();
+  try{ await setDoc(doc(firestore, 'trips', id), trip); }
+  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+});
+
+function init(){
+  renderAll();
+  onSnapshot(tripsCol, snap=>{
+    trips = snap.docs.map(d=>d.data());
+    renderAll();
+  }, err=>{
+    setStatus('Brak połączenia z bazą — sprawdź internet.');
+  });
+}
+init();
+</script>
+</body>
+</html>
