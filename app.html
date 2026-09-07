@@ -571,7 +571,10 @@ let profiles = {};
 let me = localStorage.getItem('kolacja_who') || null;
 let viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0);
 
-function todayStr(){ return dateStr(new Date()); }
+function todayStr(){
+  // Always uses Polish local time, regardless of the device's own timezone setting.
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw' }).format(new Date());
+}
 function fmt(d){ return d.toLocaleDateString('pl-PL', {day:'numeric', month:'long'}); }
 function parse(s){ const [y,m,day] = s.split('-').map(Number); return new Date(y, m-1, day); }
 function dateStr(d){
@@ -764,7 +767,7 @@ const FREE_SEARCH_DAYS = 365;
 function renderFreeList(){
   const el = document.getElementById('freeList');
   const out = [];
-  let d = new Date(); d.setHours(0,0,0,0);
+  let d = parse(todayStr());
   for(let i=0; i<FREE_SEARCH_DAYS && out.length<6; i++){
     const ymd = dateStr(d);
     if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
