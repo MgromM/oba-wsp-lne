@@ -234,6 +234,28 @@
   .diet-tag.inne{ background:var(--ona-bg); color:var(--ona); }
   .diet-allergens{ color:var(--ink-soft); margin-top:4px; }
 
+  .tag-input-row{ display:flex; gap:8px; }
+  .tag-input-row input{ flex:1; }
+  .tag-add{
+    flex:none; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    padding:0 16px; border-radius:9px; font-family:inherit; font-weight:600; font-size:14px; cursor:pointer;
+  }
+  .tag-list{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .tag-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--ona-bg); color:var(--ona); border:1px solid var(--ona);
+    padding:4px 6px 4px 10px; border-radius:999px; font-size:13px; font-weight:600;
+  }
+  .tag-chip button{
+    border:none; background:transparent; color:inherit; cursor:pointer;
+    font-size:15px; line-height:1; padding:2px 4px; border-radius:50%;
+  }
+  .diet-allergen-tags{ display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+  .diet-allergen-tag{
+    background:var(--ona-bg); color:var(--ona); font-size:12px; font-weight:600;
+    padding:2px 9px; border-radius:999px;
+  }
+
   .months{ display:flex; flex-direction:column; gap:22px; }
   .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
   .month-nav button{
@@ -342,8 +364,12 @@
             </select>
           </div>
           <div>
-            <label for="allergens">Alergeny / czego nie jeść</label>
-            <input type="text" id="allergens" maxlength="120" placeholder="np. orzechy, laktoza, skorupiaki...">
+            <label for="allergenInput">Alergeny / czego nie jeść</label>
+            <div class="tag-input-row">
+              <input type="text" id="allergenInput" maxlength="30" placeholder="np. orzechy">
+              <button type="button" class="tag-add" id="allergenAddBtn">Dodaj</button>
+            </div>
+            <div class="tag-list" id="allergenTags"></div>
           </div>
           <button type="submit" class="primary" id="dietSubmitBtn">Zapisz</button>
         </form>
@@ -411,11 +437,42 @@ function setWho(person){
   fillDietForm();
 }
 
+let pendingAllergens = [];
+
 function fillDietForm(){
   const mine = me ? profiles[me] : null;
   document.getElementById('dietType').value = mine ? (mine.diet || '') : '';
-  document.getElementById('allergens').value = mine ? (mine.allergens || '') : '';
+  pendingAllergens = mine && Array.isArray(mine.allergens) ? [...mine.allergens] : [];
+  renderAllergenTags();
 }
+
+function renderAllergenTags(){
+  const el = document.getElementById('allergenTags');
+  el.innerHTML = pendingAllergens.map((a,i)=>`
+    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">×</button></span>
+  `).join('');
+  el.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      pendingAllergens.splice(Number(btn.dataset.i), 1);
+      renderAllergenTags();
+    });
+  });
+}
+
+function addAllergenFromInput(){
+  const input = document.getElementById('allergenInput');
+  const val = input.value.trim();
+  if(!val) return;
+  if(!pendingAllergens.some(a=>a.toLowerCase()===val.toLowerCase())) pendingAllergens.push(val);
+  input.value = '';
+  renderAllergenTags();
+  input.focus();
+}
+
+document.getElementById('allergenAddBtn').addEventListener('click', addAllergenFromInput);
+document.getElementById('allergenInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); addAllergenFromInput(); }
+});
 document.getElementById('btn-michal').addEventListener('click', ()=>setWho('michal'));
 document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
 if(me) setWho(me);
@@ -537,12 +594,16 @@ function renderDiets(){
     const p = profiles[k];
     const tagClass = p.diet==='wegan' ? 'wegan' : (p.diet==='wege' ? 'wege' : (p.diet==='inne' ? 'inne' : ''));
     const tag = p.diet ? `<span class="diet-tag ${tagClass}">${DIET_LABELS[p.diet] || p.diet}</span>` : '';
+    const allergenList = Array.isArray(p.allergens) ? p.allergens : (p.allergens ? [p.allergens] : []);
+    const allergenHtml = allergenList.length
+      ? `<div class="diet-allergen-tags">${allergenList.map(a=>`<span class="diet-allergen-tag">${escapeHtml(a)}</span>`).join('')}</div>`
+      : '';
     return `
       <div class="diet-item">
         <div class="diet-meta">
           <div class="diet-name">${PERSON_NAMES[k]}</div>
           ${tag}
-          ${p.allergens ? `<div class="diet-allergens">${escapeHtml(p.allergens)}</div>` : ''}
+          ${allergenHtml}
         </div>
       </div>`;
   }).join('');
@@ -582,8 +643,9 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
 document.getElementById('dietForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
+  addAllergenFromInput();
   const diet = document.getElementById('dietType').value;
-  const allergens = document.getElementById('allergens').value.trim();
+  const allergens = [...pendingAllergens];
   const profile = { person: me, diet, allergens, updatedAt: Date.now() };
   profiles[me] = profile;
   renderDiets();
