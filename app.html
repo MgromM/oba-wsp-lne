@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <title>Termin na kolację</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6f62">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
 <style>
@@ -211,12 +215,21 @@
   .trip-meta{ flex:1; min-width:0; }
   .trip-dates{ font-variant-numeric:tabular-nums; font-weight:600; }
   .trip-loc{ color:var(--ink-soft); }
-  .del{
+  .del, .edit{
     border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
     font-size:18px; line-height:1; padding:8px 10px; border-radius:6px; flex:none;
   }
   .del:hover{ color:var(--danger); }
+  .edit:hover{ color:var(--michal); }
   .empty{ color:var(--ink-soft); font-size:13.5px; padding:6px 2px; }
+
+  .form-btn-row{ display:flex; gap:10px; align-items:stretch; }
+  .form-btn-row .primary{ flex:1; }
+  .cancel-edit{
+    border:1px solid var(--line); background:var(--paper); color:var(--ink-soft);
+    font-family:inherit; font-weight:600; font-size:14px; border-radius:9px;
+    padding:0 18px; cursor:pointer; flex:none;
+  }
 
   .diet-list{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
   .diet-item{
@@ -281,6 +294,7 @@
   }
   .day.pad{ visibility:hidden; }
   .day.past{ opacity:.35; }
+  .day.today{ box-shadow: inset 0 0 0 2px var(--ink); }
   .day .num{ font-weight:600; }
   .day.free{ background:var(--both-bg); border-color:var(--both-line); }
   .day.free .num::after{ content:" 🍽"; font-size:11px; }
@@ -420,7 +434,7 @@
         <div class="free-list" id="freeList"></div>
       </div>
 
-      <details class="card details-card">
+      <details class="card details-card" id="tripFormDetails">
         <summary>Dodaj wyjazd / zajętość</summary>
         <form class="trip" id="tripForm">
           <div class="row2">
@@ -437,7 +451,10 @@
             <label for="loc">Gdzie / co (opcjonalnie)</label>
             <input type="text" id="loc" maxlength="60" placeholder="np. Kraków, wesele, delegacja...">
           </div>
-          <button type="submit" class="primary" id="submitBtn">Dodaj</button>
+          <div class="form-btn-row">
+            <button type="submit" class="primary" id="submitBtn">Dodaj</button>
+            <button type="button" class="cancel-edit" id="cancelEditBtn" hidden>Anuluj</button>
+          </div>
           <div class="status" id="status"></div>
         </form>
       </details>
@@ -671,12 +688,41 @@ function renderTripList(){
         <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}</div>
         ${t.loc ? `<div class="trip-loc">${escapeHtml(t.loc)}</div>` : ''}
       </div>
+      ${t.person===me ? `<button class="edit" data-id="${t.id}" aria-label="Edytuj">✎</button>` : ''}
       <button class="del" data-id="${t.id}" aria-label="Usuń" ${me ? '' : 'disabled title="wybierz kim jesteś"'}>×</button>
     </div>
   `).join('');
   list.querySelectorAll('.del').forEach(btn=>{
-    btn.addEventListener('click', ()=>deleteTrip(btn.dataset.id));
+    btn.addEventListener('click', ()=>{
+      if(confirm('Na pewno usunąć ten termin?')) deleteTrip(btn.dataset.id);
+    });
   });
+  list.querySelectorAll('.edit').forEach(btn=>{
+    btn.addEventListener('click', ()=>startEditTrip(btn.dataset.id));
+  });
+}
+
+let editingTripId = null;
+
+function startEditTrip(id){
+  const t = trips.find(x=>x.id===id);
+  if(!t) return;
+  editingTripId = id;
+  document.getElementById('start').value = t.start;
+  document.getElementById('end').value = t.end;
+  document.getElementById('loc').value = t.loc || '';
+  document.getElementById('submitBtn').textContent = 'Zapisz zmiany';
+  document.getElementById('cancelEditBtn').hidden = false;
+  const details = document.getElementById('tripFormDetails');
+  if(details) details.open = true;
+  document.getElementById('start').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function cancelEditTrip(){
+  editingTripId = null;
+  document.getElementById('tripForm').reset();
+  document.getElementById('submitBtn').textContent = 'Dodaj';
+  document.getElementById('cancelEditBtn').hidden = true;
 }
 
 function renderFreeList(){
@@ -716,6 +762,7 @@ function buildMonthTable(monthDate){
       const busyO = isBusy('ona', ymd);
       let cls = 'day';
       if(ymd < today) cls += ' past';
+      if(ymd === today) cls += ' today';
       if(busyM && busyO) cls += ' busy-both';
       else if(busyM) cls += ' busy-michal';
       else if(busyO) cls += ' busy-ona';
@@ -807,6 +854,18 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   if(!start || !end){ setStatus('Podaj obie daty.'); return; }
   if(end < start){ setStatus('Data "do" musi być po dacie "od".'); return; }
 
+  if(editingTripId){
+    const id = editingTripId;
+    const existing = trips.find(t=>t.id===id);
+    const trip = { id, person: me, start, end, loc, createdAt: existing ? existing.createdAt : Date.now() };
+    trips = trips.map(t=>t.id===id ? trip : t);
+    renderAll();
+    cancelEditTrip();
+    try{ await setDoc(doc(firestore, 'trips', id), trip); }
+    catch(err){ setStatus('Nie zapisano zmian na serwerze — spróbuj ponownie.'); }
+    return;
+  }
+
   const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
   const trip = { id, person: me, start, end, loc, createdAt: Date.now() };
   trips.push(trip);
@@ -815,6 +874,8 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   try{ await setDoc(doc(firestore, 'trips', id), trip); }
   catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
 });
+
+document.getElementById('cancelEditBtn').addEventListener('click', cancelEditTrip);
 
 document.getElementById('dietForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
