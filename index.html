@@ -124,11 +124,11 @@
     border:1px solid var(--line);
     border-radius:16px;
     box-shadow:var(--shadow);
-    padding:16px;
+    padding:14px 16px;
   }
   @media (min-width:640px){ .card{ padding:20px; } }
-  .card + .card{ margin-top:16px; }
-  @media (min-width:640px){ .card + .card{ margin-top:20px; } }
+  .card + .card, .card + details, details + .card, details + details{ margin-top:12px; }
+  @media (min-width:640px){ .card + .card, .card + details, details + .card, details + details{ margin-top:20px; } }
 
   .card h2{
     font-family:'Fraunces', Georgia, serif;
@@ -136,6 +136,30 @@
     font-weight:600;
     margin:0 0 14px;
   }
+
+  .details-card summary{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:17px;
+    font-weight:600;
+    cursor:pointer;
+    list-style:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:2px 0;
+  }
+  .details-card summary::-webkit-details-marker{ display:none; }
+  .details-card summary::after{
+    content:'+';
+    font-size:20px;
+    font-weight:400;
+    color:var(--ink-soft);
+    flex:none;
+    margin-left:12px;
+  }
+  .details-card[open] summary::after{ content:'–'; }
+  .details-card[open] summary{ margin-bottom:14px; }
+  .details-card form, .details-card .trip-list, .details-card .diet-list{ margin-top:0; }
 
   form.trip{ display:flex; flex-direction:column; gap:12px; }
   .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -250,11 +274,11 @@
   .legend i.michal{ background:var(--michal-bg); border:1px solid var(--michal); }
   .legend i.ona{ background:var(--ona-bg); border:1px solid var(--ona); }
 
-  .free-list{ display:flex; flex-direction:column; gap:6px; }
+  .free-list{ display:flex; flex-direction:column; gap:5px; }
   .free-list .free-item{
     display:flex; justify-content:space-between; gap:8px;
-    padding:7px 10px; border-radius:9px; background:var(--both-bg); border:1px solid var(--both-line);
-    font-size:13.5px; font-weight:600;
+    padding:6px 10px; border-radius:8px; background:var(--both-bg); border:1px solid var(--both-line);
+    font-size:13px; font-weight:600;
   }
   .status{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; min-height:16px; }
 </style>
@@ -274,7 +298,12 @@
   <div class="grid">
     <div>
       <div class="card">
-        <h2>Dodaj wyjazd / zajętość</h2>
+        <h2>Najbliższe wolne wieczory (oboje)</h2>
+        <div class="free-list" id="freeList"></div>
+      </div>
+
+      <details class="card details-card">
+        <summary>Dodaj wyjazd / zajętość</summary>
         <form class="trip" id="tripForm">
           <div class="row2">
             <div>
@@ -293,20 +322,15 @@
           <button type="submit" class="primary" id="submitBtn">Dodaj</button>
           <div class="status" id="status"></div>
         </form>
-      </div>
+      </details>
 
-      <div class="card">
-        <h2>Najbliższe wolne wieczory (oboje)</h2>
-        <div class="free-list" id="freeList"></div>
-      </div>
-
-      <div class="card">
-        <h2>Wpisane terminy</h2>
+      <details class="card details-card">
+        <summary>Wpisane terminy</summary>
         <div class="trip-list" id="tripList"></div>
-      </div>
+      </details>
 
-      <div class="card">
-        <h2>Preferencje żywieniowe</h2>
+      <details class="card details-card">
+        <summary>Preferencje żywieniowe</summary>
         <form class="trip" id="dietForm">
           <div>
             <label for="dietType">Dieta</label>
@@ -324,7 +348,7 @@
           <button type="submit" class="primary" id="dietSubmitBtn">Zapisz</button>
         </form>
         <div class="diet-list" id="dietList"></div>
-      </div>
+      </details>
     </div>
 
     <div class="card">
@@ -426,7 +450,7 @@ function renderFreeList(){
   const el = document.getElementById('freeList');
   const out = [];
   let d = new Date(); d.setHours(0,0,0,0);
-  for(let i=0; i<60 && out.length<6; i++){
+  for(let i=0; i<60 && out.length<4; i++){
     const ymd = dateStr(d);
     if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
     d.setDate(d.getDate()+1);
