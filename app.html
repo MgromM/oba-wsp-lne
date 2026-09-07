@@ -295,6 +295,32 @@
   .day.pad{ visibility:hidden; }
   .day.past{ opacity:.35; }
   .day.today{ box-shadow: inset 0 0 0 2px var(--ink); }
+  .day.clickable{ cursor:pointer; }
+  .day.clickable:hover, .day.clickable:focus-visible{ outline:2px solid var(--ink); outline-offset:-2px; }
+
+  .day-popover{
+    position:fixed;
+    z-index:150;
+    max-width:260px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:12px 14px;
+    font-size:13.5px;
+  }
+  .day-popover[hidden]{ display:none; }
+  .day-popover-date{
+    font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; margin-bottom:6px;
+  }
+  .day-popover-row{ display:flex; align-items:baseline; gap:6px; margin-top:3px; }
+  .day-popover-row .dot{ margin-top:2px; }
+  .day-popover-name{ font-weight:600; flex:none; }
+  .day-popover-loc{ color:var(--ink-soft); }
+  .day-popover-close{
+    position:absolute; top:6px; right:6px; border:none; background:transparent;
+    color:var(--ink-soft); cursor:pointer; font-size:15px; padding:4px 7px; line-height:1;
+  }
   .day .num{ font-weight:600; }
   .day.free{ background:var(--both-bg); border-color:var(--both-line); }
   .day.free .num::after{ content:" 🍽"; font-size:11px; }
@@ -530,6 +556,7 @@
         <button id="nextMonth" aria-label="Następny miesiąc">›</button>
       </div>
       <div class="months" id="calendarRoot"></div>
+      <div class="day-popover" id="dayPopover" hidden></div>
       <div class="legend">
         <span><i class="free"></i>oboje wolni</span>
         <span><i class="michal"></i>Michał zajęty</span>
@@ -964,7 +991,9 @@ function buildMonthTable(monthDate){
       else if(ymd >= today) cls += ' free';
       if(confirmed && confirmed.date === ymd) cls += ' confirmed';
       const heart = (confirmed && confirmed.date === ymd) ? ' 💛' : '';
-      return `<td><div class="${cls}"><div class="num">${d}${heart}</div></div></td>`;
+      const clickable = (busyM || busyO) ? ' data-ymd="'+ymd+'" tabindex="0" role="button"' : '';
+      if(busyM || busyO) cls += ' clickable';
+      return `<td><div class="${cls}"${clickable}><div class="num">${d}${heart}</div></div></td>`;
     }).join('') + '</tr>';
   }
 
@@ -987,10 +1016,62 @@ function renderCalendar(){
   `;
 }
 
+function showDayPopover(dayEl){
+  const ymd = dayEl.dataset.ymd;
+  const pop = document.getElementById('dayPopover');
+  const d = parse(ymd);
+  const rows = [];
+  ['michal','ona'].forEach(p=>{
+    if(isBusy(p, ymd)){
+      const t = trips.find(tr=>tr.person===p && ymd>=tr.start && ymd<=tr.end);
+      const locText = t && t.loc ? escapeHtml(t.loc) : 'brak podanej lokalizacji';
+      rows.push(`<div class="day-popover-row"><span class="dot ${p}"></span><span class="day-popover-name">${PERSON_NAMES[p]}:</span><span class="day-popover-loc">${locText}</span></div>`);
+    }
+  });
+  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">×</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}`;
+  pop.hidden = false;
+  const rect = dayEl.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  const maxLeft = window.innerWidth - popRect.width - 10;
+  let left = Math.min(Math.max(10, rect.left), Math.max(10, maxLeft));
+  let top = rect.bottom + 8;
+  if(top + popRect.height > window.innerHeight - 10){
+    top = rect.top - popRect.height - 8;
+  }
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+  pop.querySelector('.day-popover-close').addEventListener('click', hideDayPopover);
+}
+
+function hideDayPopover(){
+  document.getElementById('dayPopover').hidden = true;
+}
+
+document.getElementById('calendarRoot').addEventListener('click', (e)=>{
+  const dayEl = e.target.closest('.day[data-ymd]');
+  if(!dayEl) return;
+  showDayPopover(dayEl);
+});
+document.getElementById('calendarRoot').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' || e.key===' '){
+    const dayEl = e.target.closest('.day[data-ymd]');
+    if(dayEl){ e.preventDefault(); showDayPopover(dayEl); }
+  }
+});
+document.addEventListener('click', (e)=>{
+  const pop = document.getElementById('dayPopover');
+  if(pop.hidden) return;
+  if(pop.contains(e.target)) return;
+  if(e.target.closest('.day[data-ymd]')) return;
+  hideDayPopover();
+});
+
 document.getElementById('prevMonth').addEventListener('click', ()=>{
+  hideDayPopover();
   viewMonth.setMonth(viewMonth.getMonth()-1); renderCalendar();
 });
 document.getElementById('nextMonth').addEventListener('click', ()=>{
+  hideDayPopover();
   viewMonth.setMonth(viewMonth.getMonth()+1); renderCalendar();
 });
 
