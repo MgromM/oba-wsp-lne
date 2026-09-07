@@ -312,11 +312,33 @@
 
   .free-list{ display:flex; flex-direction:column; gap:5px; }
   .free-list .free-item{
-    display:flex; justify-content:space-between; gap:8px;
-    padding:6px 10px; border-radius:8px; background:var(--both-bg); border:1px solid var(--both-line);
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:6px 6px 6px 10px; border-radius:8px; background:var(--both-bg); border:1px solid var(--both-line);
     font-size:13px; font-weight:600;
   }
+  .free-item-dates{ display:flex; flex-direction:column; }
+  .pick-btn{
+    flex:none; border:1px solid var(--both-line); background:var(--paper-raised); color:var(--ink);
+    font-family:inherit; font-weight:600; font-size:12.5px; padding:6px 10px; border-radius:7px; cursor:pointer;
+  }
+  .pick-btn:hover{ background:var(--both-line); color:var(--paper-raised); }
   .status{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; min-height:16px; }
+
+  .confirmed-card{ border-color:var(--both-line); background:var(--both-bg); }
+  .confirmed-card h2{ color:var(--ink); }
+  .confirmed-body{ display:flex; flex-direction:column; gap:4px; }
+  .confirmed-date{ font-family:'Fraunces',serif; font-weight:600; font-size:22px; }
+  .confirmed-meta{ color:var(--ink-soft); font-size:13px; }
+  .unconfirm-btn{
+    align-self:flex-start; margin-top:10px;
+    border:1px solid var(--both-line); background:var(--paper-raised); color:var(--ink-soft);
+    font-family:inherit; font-weight:600; font-size:13px; padding:8px 14px; border-radius:9px; cursor:pointer;
+  }
+  .unconfirm-btn:hover{ color:var(--danger); }
+
+  .day.confirmed{ background:var(--both-line); box-shadow: inset 0 0 0 2px var(--ink); }
+  .day.confirmed .num{ color:#2b2630; }
+  .day.confirmed .num::after{ content:none; }
 
   .onboard-overlay{
     position:fixed; inset:0; z-index:100;
@@ -429,6 +451,11 @@
 
   <div class="grid">
     <div>
+      <div class="card confirmed-card" id="confirmedCard" hidden>
+        <h2>Zaplanowana kolacja</h2>
+        <div class="confirmed-body" id="confirmedBody"></div>
+      </div>
+
       <div class="card">
         <h2>Najbliższe wolne wieczory (oboje)</h2>
         <div class="free-list" id="freeList"></div>
@@ -531,6 +558,8 @@ const fbApp = initializeApp(firebaseConfig);
 const firestore = getFirestore(fbApp);
 const tripsCol = collection(firestore, 'trips');
 const profilesCol = collection(firestore, 'profiles');
+const confirmedDocRef = doc(firestore, 'meta', 'confirmed_date');
+let confirmed = null;
 const PERSON_NAMES = { michal: 'Michał', ona: 'Aga' };
 const DIET_LABELS = { wege: 'Wegetariańska', wegan: 'Wegańska', inne: 'Inne' };
 
@@ -725,20 +754,68 @@ function cancelEditTrip(){
   document.getElementById('cancelEditBtn').hidden = true;
 }
 
+const FREE_SEARCH_DAYS = 365;
+
 function renderFreeList(){
   const el = document.getElementById('freeList');
   const out = [];
   let d = new Date(); d.setHours(0,0,0,0);
-  for(let i=0; i<60 && out.length<4; i++){
+  for(let i=0; i<FREE_SEARCH_DAYS && out.length<6; i++){
     const ymd = dateStr(d);
     if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
     d.setDate(d.getDate()+1);
   }
   if(out.length===0){
-    el.innerHTML = '<div class="empty">Brak wspólnych wolnych dni w najbliższych 2 miesiącach.</div>';
+    el.innerHTML = '<div class="empty">Brak wspólnych wolnych dni w najbliższym roku.</div>';
     return;
   }
-  el.innerHTML = out.map(d => `<div class="free-item"><span>${d.toLocaleDateString('pl-PL',{weekday:'long'})}</span><span>${fmt(d)}</span></div>`).join('');
+  el.innerHTML = out.map(d => {
+    const ymd = dateStr(d);
+    const isConfirmed = confirmed && confirmed.date === ymd;
+    return `<div class="free-item">
+      <div class="free-item-dates"><span>${d.toLocaleDateString('pl-PL',{weekday:'long'})}</span><span>${fmt(d)}</span></div>
+      <button class="pick-btn" data-ymd="${ymd}" ${!me || isConfirmed ? 'disabled' : ''}>${isConfirmed ? 'Wybrano ✓' : 'Wybieramy ten dzień'}</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.pick-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>confirmDate(btn.dataset.ymd));
+  });
+}
+
+function renderConfirmed(){
+  const card = document.getElementById('confirmedCard');
+  const body = document.getElementById('confirmedBody');
+  if(!confirmed){
+    card.hidden = true;
+    return;
+  }
+  card.hidden = false;
+  const d = parse(confirmed.date);
+  body.innerHTML = `
+    <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
+    <div class="confirmed-meta">Wybrane przez ${PERSON_NAMES[confirmed.confirmedBy] || confirmed.confirmedBy}</div>
+    <button class="unconfirm-btn" id="unconfirmBtn" ${me ? '' : 'disabled'}>Odwołaj</button>
+  `;
+  document.getElementById('unconfirmBtn').addEventListener('click', unconfirmDate);
+}
+
+async function confirmDate(ymd){
+  if(!me) return;
+  confirmed = { date: ymd, confirmedBy: me, confirmedAt: Date.now() };
+  renderConfirmed();
+  renderFreeList();
+  renderCalendar();
+  try{ await setDoc(confirmedDocRef, confirmed); }
+  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+}
+
+async function unconfirmDate(){
+  confirmed = null;
+  renderConfirmed();
+  renderFreeList();
+  renderCalendar();
+  try{ await deleteDoc(confirmedDocRef); }
+  catch(err){ setStatus('Nie udało się odwołać — spróbuj ponownie.'); }
 }
 
 function buildMonthTable(monthDate){
@@ -767,7 +844,9 @@ function buildMonthTable(monthDate){
       else if(busyM) cls += ' busy-michal';
       else if(busyO) cls += ' busy-ona';
       else if(ymd >= today) cls += ' free';
-      return `<td><div class="${cls}"><div class="num">${d}</div></div></td>`;
+      if(confirmed && confirmed.date === ymd) cls += ' confirmed';
+      const heart = (confirmed && confirmed.date === ymd) ? ' 💛' : '';
+      return `<td><div class="${cls}"><div class="num">${d}${heart}</div></div></td>`;
     }).join('') + '</tr>';
   }
 
@@ -804,6 +883,7 @@ function renderAll(){
   renderFreeList();
   renderCalendar();
   renderDiets();
+  renderConfirmed();
 }
 
 function renderDiets(){
@@ -903,6 +983,12 @@ function init(){
     snap.docs.forEach(d=>{ profiles[d.id] = d.data(); });
     renderDiets();
     fillDietForm();
+  });
+  onSnapshot(confirmedDocRef, snap=>{
+    confirmed = snap.exists() ? snap.data() : null;
+    renderConfirmed();
+    renderFreeList();
+    renderCalendar();
   });
 }
 init();
