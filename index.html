@@ -99,6 +99,8 @@
     border:2px solid var(--no-border);
     background:var(--no-bg);
     color:var(--no-border);
+  }
+  #no.fleeing{
     position:fixed;
     transition:top .18s ease, left .18s ease;
   }
@@ -144,6 +146,7 @@ function placeNoRandomly(){
 
 noBtn.addEventListener('click', (e)=>{
   e.preventDefault();
+  noBtn.classList.add('fleeing');
   placeNoRandomly();
   hint.textContent = messages[noClicks % messages.length];
   noClicks++;
