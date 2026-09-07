@@ -304,23 +304,6 @@
   }
   .status{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; min-height:16px; }
 
-  .checkbox-row{
-    display:flex; align-items:flex-start; gap:9px; font-size:13.5px; color:var(--ink-soft);
-    cursor:pointer; line-height:1.4;
-  }
-  .checkbox-row input{ width:auto; flex:none; margin-top:2px; accent-color:var(--michal); width:18px; height:18px; }
-  .remote-badge{
-    display:inline-block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;
-    padding:1px 7px; border-radius:999px; margin-left:6px;
-    background:transparent; border:1px dashed var(--ink-soft); color:var(--ink-soft);
-  }
-  .day-remote-marks{ display:flex; gap:2px; margin-top:2px; }
-  .remote-dot{
-    width:7px; height:7px; border-radius:2px; flex:none;
-  }
-  .remote-dot.michal{ border:1.5px solid var(--michal); }
-  .remote-dot.ona{ border:1.5px solid var(--ona); }
-
   .onboard-overlay{
     position:fixed; inset:0; z-index:100;
     background:color-mix(in srgb, var(--ink) 45%, transparent);
@@ -454,10 +437,6 @@
             <label for="loc">Gdzie / co (opcjonalnie)</label>
             <input type="text" id="loc" maxlength="60" placeholder="np. Kraków, wesele, delegacja...">
           </div>
-          <label class="checkbox-row">
-            <input type="checkbox" id="remoteCheck">
-            <span>Pracuję zdalnie — mimo wyjazdu jestem dostępny/a na kolację</span>
-          </label>
           <button type="submit" class="primary" id="submitBtn">Dodaj</button>
           <div class="status" id="status"></div>
         </form>
@@ -506,7 +485,6 @@
         <span><i class="free"></i>oboje wolni</span>
         <span><i class="michal"></i>Michał zajęty</span>
         <span><i class="ona"></i>Agnieszka zajęta</span>
-        <span><span class="remote-dot michal" style="display:inline-block;"></span>ktoś pracuje zdalnie (dostępny)</span>
       </div>
     </div>
   </div>
@@ -676,11 +654,7 @@ document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
 if(me) setWho(me);
 
 function isBusy(person, ymd){
-  return trips.some(t => t.person===person && !t.remote && ymd >= t.start && ymd <= t.end);
-}
-
-function isRemote(person, ymd){
-  return trips.some(t => t.person===person && t.remote && ymd >= t.start && ymd <= t.end);
+  return trips.some(t => t.person===person && ymd >= t.start && ymd <= t.end);
 }
 
 function renderTripList(){
@@ -694,7 +668,7 @@ function renderTripList(){
     <div class="trip-item">
       <span class="dot ${t.person}"></span>
       <div class="trip-meta">
-        <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}${t.remote ? '<span class="remote-badge">zdalnie</span>' : ''}</div>
+        <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}</div>
         ${t.loc ? `<div class="trip-loc">${escapeHtml(t.loc)}</div>` : ''}
       </div>
       <button class="del" data-id="${t.id}" aria-label="Usuń" ${me ? '' : 'disabled title="wybierz kim jesteś"'}>×</button>
@@ -740,18 +714,13 @@ function buildMonthTable(monthDate){
       const ymd = dateStr(new Date(year, month, d));
       const busyM = isBusy('michal', ymd);
       const busyO = isBusy('ona', ymd);
-      const remoteM = isRemote('michal', ymd);
-      const remoteO = isRemote('ona', ymd);
       let cls = 'day';
       if(ymd < today) cls += ' past';
       if(busyM && busyO) cls += ' busy-both';
       else if(busyM) cls += ' busy-michal';
       else if(busyO) cls += ' busy-ona';
       else if(ymd >= today) cls += ' free';
-      const remoteDots = (remoteM || remoteO)
-        ? `<div class="day-remote-marks">${remoteM ? '<span class="remote-dot michal" title="Michał zdalnie"></span>' : ''}${remoteO ? '<span class="remote-dot ona" title="Agnieszka zdalnie"></span>' : ''}</div>`
-        : '';
-      return `<td><div class="${cls}"><div class="num">${d}</div>${remoteDots}</div></td>`;
+      return `<td><div class="${cls}"><div class="num">${d}</div></div></td>`;
     }).join('') + '</tr>';
   }
 
@@ -835,12 +804,11 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   const start = document.getElementById('start').value;
   const end = document.getElementById('end').value;
   const loc = document.getElementById('loc').value.trim();
-  const remote = document.getElementById('remoteCheck').checked;
   if(!start || !end){ setStatus('Podaj obie daty.'); return; }
   if(end < start){ setStatus('Data "do" musi być po dacie "od".'); return; }
 
   const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-  const trip = { id, person: me, start, end, loc, remote, createdAt: Date.now() };
+  const trip = { id, person: me, start, end, loc, createdAt: Date.now() };
   trips.push(trip);
   renderAll();
   e.target.reset();
