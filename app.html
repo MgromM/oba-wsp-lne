@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Termin na kolację</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --paper:#faf6f0;
+    --paper-raised:#ffffff;
+    --ink:#2b2630;
+    --ink-soft:#6b6270;
+    --line:#e7ddd0;
+    --michal:#2f6f62;
+    --michal-bg:#e3efe9;
+    --ona:#b8365f;
+    --ona-bg:#f8e6ec;
+    --both-bg:#fff2c7;
+    --both-line:#d8ab2b;
+    --danger:#b8365f;
+    --shadow: 0 1px 2px rgba(43,38,48,.06), 0 6px 20px rgba(43,38,48,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1c1a1f;
+      --paper-raised:#262330;
+      --ink:#ede8f0;
+      --ink-soft:#a89fb0;
+      --line:#3a3542;
+      --michal:#6fcbb3;
+      --michal-bg:#22332e;
+      --ona:#f292b3;
+      --ona-bg:#3a2530;
+      --both-bg:#4a3d1a;
+      --both-line:#c9a331;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1c1a1f;
+    --paper-raised:#262330;
+    --ink:#ede8f0;
+    --ink-soft:#a89fb0;
+    --line:#3a3542;
+    --michal:#6fcbb3;
+    --michal-bg:#22332e;
+    --ona:#f292b3;
+    --ona-bg:#3a2530;
+    --both-bg:#4a3d1a;
+    --both-line:#c9a331;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+  }
+  .wrap{
+    max-width:980px;
+    margin:0 auto;
+    padding:20px 14px 48px;
+  }
+  @media (min-width:640px){ .wrap{ padding:36px 20px 80px; } }
+  header{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:22px;
+  }
+  h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size:clamp(26px,7vw,38px);
+    margin:0;
+    text-wrap:balance;
+    letter-spacing:-.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14.5px;
+  }
+
+  .whoami{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .whoami span{ color:var(--ink-soft); font-size:13.5px; text-transform:uppercase; letter-spacing:.06em; }
+  .who-btn{
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    color:var(--ink);
+    padding:10px 18px;
+    min-height:44px;
+    border-radius:999px;
+    font-family:inherit;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .who-btn[data-active="true"][data-person="michal"]{ border-color:var(--michal); background:var(--michal-bg); color:var(--michal); }
+  .who-btn[data-active="true"][data-person="ona"]{ border-color:var(--ona); background:var(--ona-bg); color:var(--ona); }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:16px;
+    align-items:start;
+  }
+  @media (min-width:760px){ .grid{ grid-template-columns: minmax(0,1.5fr) minmax(260px,1fr); gap:24px; } }
+
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:14px 16px;
+  }
+  @media (min-width:640px){ .card{ padding:20px; } }
+  .card + .card, .card + details, details + .card, details + details{ margin-top:12px; }
+  @media (min-width:640px){ .card + .card, .card + details, details + .card, details + details{ margin-top:20px; } }
+
+  .card h2{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:18px;
+    font-weight:600;
+    margin:0 0 14px;
+  }
+
+  .details-card summary{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:17px;
+    font-weight:600;
+    cursor:pointer;
+    list-style:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:2px 0;
+  }
+  .details-card summary::-webkit-details-marker{ display:none; }
+  .details-card summary::after{
+    content:'+';
+    font-size:20px;
+    font-weight:400;
+    color:var(--ink-soft);
+    flex:none;
+    margin-left:12px;
+  }
+  .details-card[open] summary::after{ content:'–'; }
+  .details-card[open] summary{ margin-bottom:14px; }
+  .details-card form, .details-card .trip-list, .details-card .diet-list{ margin-top:0; }
+
+  form.trip{ display:flex; flex-direction:column; gap:12px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  label{ font-size:12.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:4px; }
+  input[type="date"], input[type="text"], select{
+    width:100%;
+    padding:11px 10px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:16px;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible, .who-btn:focus-visible{ outline:2px solid var(--michal); outline-offset:2px; }
+  button.primary{
+    border:none;
+    background:var(--ink);
+    color:var(--paper);
+    padding:12px 20px;
+    min-height:46px;
+    border-radius:9px;
+    font-family:inherit;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    align-self:stretch;
+  }
+  @media (min-width:520px){ button.primary{ align-self:flex-start; } }
+  [data-theme="dark"] button.primary, :root:not([data-theme="light"]) button.primary { }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) button.primary{ background:var(--michal); color:#12211c; }
+  }
+  :root[data-theme="dark"] button.primary{ background:var(--michal); color:#12211c; }
+
+  .trip-list{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+  .trip-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .dot.michal{ background:var(--michal); }
+  .dot.ona{ background:var(--ona); }
+  .trip-meta{ flex:1; min-width:0; }
+  .trip-dates{ font-variant-numeric:tabular-nums; font-weight:600; }
+  .trip-loc{ color:var(--ink-soft); }
+  .del{
+    border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
+    font-size:18px; line-height:1; padding:8px 10px; border-radius:6px; flex:none;
+  }
+  .del:hover{ color:var(--danger); }
+  .empty{ color:var(--ink-soft); font-size:13.5px; padding:6px 2px; }
+
+  .diet-list{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+  .diet-item{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:8px 10px; border-radius:10px; border:1px solid var(--line); font-size:13.5px;
+  }
+  .diet-meta{ flex:1; min-width:0; }
+  .diet-name{ font-weight:600; }
+  .diet-tag{
+    display:inline-block; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;
+    padding:1px 7px; border-radius:999px; margin-top:3px; margin-right:6px;
+  }
+  .diet-tag.wege{ background:var(--michal-bg); color:var(--michal); }
+  .diet-tag.wegan{ background:var(--michal-bg); color:var(--michal); }
+  .diet-tag.inne{ background:var(--ona-bg); color:var(--ona); }
+  .diet-allergens{ color:var(--ink-soft); margin-top:4px; }
+
+  .tag-input-row{ display:flex; gap:8px; }
+  .tag-input-row input{ flex:1; }
+  .tag-add{
+    flex:none; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    padding:0 16px; border-radius:9px; font-family:inherit; font-weight:600; font-size:14px; cursor:pointer;
+  }
+  .tag-list{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .tag-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--ona-bg); color:var(--ona); border:1px solid var(--ona);
+    padding:4px 6px 4px 10px; border-radius:999px; font-size:13px; font-weight:600;
+  }
+  .tag-chip button{
+    border:none; background:transparent; color:inherit; cursor:pointer;
+    font-size:15px; line-height:1; padding:2px 4px; border-radius:50%;
+  }
+  .diet-allergen-tags{ display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+  .diet-allergen-tag{
+    background:var(--ona-bg); color:var(--ona); font-size:12px; font-weight:600;
+    padding:2px 9px; border-radius:999px;
+  }
+
+  .months{ display:flex; flex-direction:column; gap:22px; }
+  .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .month-nav button{
+    border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:17px;
+  }
+  .month-title{ font-family:'Fraunces',serif; font-weight:600; font-size:17px; text-transform:capitalize; }
+
+  table.cal{ width:100%; border-collapse:collapse; table-layout:fixed; }
+  table.cal th{
+    font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;
+    font-weight:600; padding:4px 2px 8px;
+  }
+  table.cal td{ padding:3px; vertical-align:top; }
+  .day{
+    position:relative;
+    min-height:52px;
+    border-radius:9px;
+    border:1px solid transparent;
+    padding:5px 6px;
+    font-variant-numeric:tabular-nums;
+    font-size:13px;
+  }
+  .day.pad{ visibility:hidden; }
+  .day.past{ opacity:.35; }
+  .day .num{ font-weight:600; }
+  .day.free{ background:var(--both-bg); border-color:var(--both-line); }
+  .day.free .num::after{ content:" 🍽"; font-size:11px; }
+  .day.busy-michal{ background:var(--michal-bg); }
+  .day.busy-ona{ background:var(--ona-bg); }
+  .day.busy-both{ background:linear-gradient(135deg, var(--michal-bg) 0 50%, var(--ona-bg) 50% 100%); }
+  .day-dots{ display:flex; gap:3px; margin-top:3px; }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; font-size:13px; color:var(--ink-soft); }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+  .legend i.free{ background:var(--both-bg); border:1px solid var(--both-line); }
+  .legend i.michal{ background:var(--michal-bg); border:1px solid var(--michal); }
+  .legend i.ona{ background:var(--ona-bg); border:1px solid var(--ona); }
+
+  .free-list{ display:flex; flex-direction:column; gap:5px; }
+  .free-list .free-item{
+    display:flex; justify-content:space-between; gap:8px;
+    padding:6px 10px; border-radius:8px; background:var(--both-bg); border:1px solid var(--both-line);
+    font-size:13px; font-weight:600;
+  }
+  .status{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; min-height:16px; }
+
+  .checkbox-row{
+    display:flex; align-items:flex-start; gap:9px; font-size:13.5px; color:var(--ink-soft);
+    cursor:pointer; line-height:1.4;
+  }
+  .checkbox-row input{ width:auto; flex:none; margin-top:2px; accent-color:var(--michal); width:18px; height:18px; }
+  .remote-badge{
+    display:inline-block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;
+    padding:1px 7px; border-radius:999px; margin-left:6px;
+    background:transparent; border:1px dashed var(--ink-soft); color:var(--ink-soft);
+  }
+  .day-remote-marks{ display:flex; gap:2px; margin-top:2px; }
+  .remote-dot{
+    width:7px; height:7px; border-radius:2px; flex:none;
+  }
+  .remote-dot.michal{ border:1.5px solid var(--michal); }
+  .remote-dot.ona{ border:1.5px solid var(--ona); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Termin na kolację</h1>
+  </header>
+
+  <div class="whoami">
+    <span>Jesteś:</span>
+    <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
+    <button class="who-btn" data-person="ona" id="btn-ona">Agnieszka</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Najbliższe wolne wieczory (oboje)</h2>
+        <div class="free-list" id="freeList"></div>
+      </div>
+
+      <details class="card details-card">
+        <summary>Dodaj wyjazd / zajętość</summary>
+        <form class="trip" id="tripForm">
+          <div class="row2">
+            <div>
+              <label for="start">Od</label>
+              <input type="date" id="start" required>
+            </div>
+            <div>
+              <label for="end">Do</label>
+              <input type="date" id="end" required>
+            </div>
+          </div>
+          <div>
+            <label for="loc">Gdzie / co (opcjonalnie)</label>
+            <input type="text" id="loc" maxlength="60" placeholder="np. Kraków, wesele, delegacja...">
+          </div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="remoteCheck">
+            <span>Pracuję zdalnie — mimo wyjazdu jestem dostępny/a na kolację</span>
+          </label>
+          <button type="submit" class="primary" id="submitBtn">Dodaj</button>
+          <div class="status" id="status"></div>
+        </form>
+      </details>
+
+      <details class="card details-card">
+        <summary>Wpisane terminy</summary>
+        <div class="trip-list" id="tripList"></div>
+      </details>
+
+      <details class="card details-card">
+        <summary>Preferencje żywieniowe</summary>
+        <form class="trip" id="dietForm">
+          <div>
+            <label for="dietType">Dieta</label>
+            <select id="dietType">
+              <option value="">Bez ograniczeń</option>
+              <option value="wege">Wegetariańska</option>
+              <option value="wegan">Wegańska</option>
+              <option value="inne">Inne</option>
+            </select>
+          </div>
+          <div>
+            <label for="allergenInput">Alergeny / czego nie jeść</label>
+            <div class="tag-input-row">
+              <input type="text" id="allergenInput" maxlength="30" placeholder="np. orzechy">
+              <button type="button" class="tag-add" id="allergenAddBtn">Dodaj</button>
+            </div>
+            <div class="tag-list" id="allergenTags"></div>
+          </div>
+          <button type="submit" class="primary" id="dietSubmitBtn">Zapisz</button>
+        </form>
+        <div class="diet-list" id="dietList"></div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Kalendarz</h2>
+      <div class="month-nav">
+        <button id="prevMonth" aria-label="Poprzedni miesiąc">‹</button>
+        <div class="month-title" id="monthTitle"></div>
+        <button id="nextMonth" aria-label="Następny miesiąc">›</button>
+      </div>
+      <div class="months" id="calendarRoot"></div>
+      <div class="legend">
+        <span><i class="free"></i>oboje wolni</span>
+        <span><i class="michal"></i>Michał zajęty</span>
+        <span><i class="ona"></i>Agnieszka zajęta</span>
+        <span><span class="remote-dot michal" style="display:inline-block;"></span>ktoś pracuje zdalnie (dostępny)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, setDoc, deleteDoc,
+  getDocs, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBlAjb5gNcZfaHMBKglquZ4JD3lhBs1tao",
+  authDomain: "oba-wolne.firebaseapp.com",
+  projectId: "oba-wolne",
+  storageBucket: "oba-wolne.firebasestorage.app",
+  messagingSenderId: "542262689847",
+  appId: "1:542262689847:web:af9c318aa74843d8ab3fb2"
+};
+const fbApp = initializeApp(firebaseConfig);
+const firestore = getFirestore(fbApp);
+const tripsCol = collection(firestore, 'trips');
+const profilesCol = collection(firestore, 'profiles');
+const PERSON_NAMES = { michal: 'Michał', ona: 'Agnieszka' };
+const DIET_LABELS = { wege: 'Wegetariańska', wegan: 'Wegańska', inne: 'Inne' };
+
+const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
+const MONTH_NAMES = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
+
+let trips = [];
+let profiles = {};
+let me = localStorage.getItem('kolacja_who') || null;
+let viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0);
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmt(d){ return d.toLocaleDateString('pl-PL', {day:'numeric', month:'long'}); }
+function parse(s){ const [y,m,day] = s.split('-').map(Number); return new Date(y, m-1, day); }
+function dateStr(d){ return d.toISOString().slice(0,10); }
+
+function setWho(person){
+  me = person;
+  localStorage.setItem('kolacja_who', person);
+  document.getElementById('btn-michal').setAttribute('data-active', person==='michal');
+  document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
+  fillDietForm();
+}
+
+let pendingAllergens = [];
+
+function fillDietForm(){
+  const mine = me ? profiles[me] : null;
+  document.getElementById('dietType').value = mine ? (mine.diet || '') : '';
+  pendingAllergens = mine && Array.isArray(mine.allergens) ? [...mine.allergens] : [];
+  renderAllergenTags();
+}
+
+function renderAllergenTags(){
+  const el = document.getElementById('allergenTags');
+  el.innerHTML = pendingAllergens.map((a,i)=>`
+    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">×</button></span>
+  `).join('');
+  el.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      pendingAllergens.splice(Number(btn.dataset.i), 1);
+      renderAllergenTags();
+    });
+  });
+}
+
+function addAllergenFromInput(){
+  const input = document.getElementById('allergenInput');
+  const val = input.value.trim();
+  if(!val) return;
+  if(!pendingAllergens.some(a=>a.toLowerCase()===val.toLowerCase())) pendingAllergens.push(val);
+  input.value = '';
+  renderAllergenTags();
+  input.focus();
+}
+
+document.getElementById('allergenAddBtn').addEventListener('click', addAllergenFromInput);
+document.getElementById('allergenInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); addAllergenFromInput(); }
+});
+document.getElementById('btn-michal').addEventListener('click', ()=>setWho('michal'));
+document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
+if(me) setWho(me);
+
+function isBusy(person, ymd){
+  return trips.some(t => t.person===person && !t.remote && ymd >= t.start && ymd <= t.end);
+}
+
+function isRemote(person, ymd){
+  return trips.some(t => t.person===person && t.remote && ymd >= t.start && ymd <= t.end);
+}
+
+function renderTripList(){
+  const list = document.getElementById('tripList');
+  const sorted = [...trips].sort((a,b)=>a.start.localeCompare(b.start));
+  if(sorted.length===0){
+    list.innerHTML = '<div class="empty">Nikt jeszcze nic nie wpisał.</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(t => `
+    <div class="trip-item">
+      <span class="dot ${t.person}"></span>
+      <div class="trip-meta">
+        <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}${t.remote ? '<span class="remote-badge">zdalnie</span>' : ''}</div>
+        ${t.loc ? `<div class="trip-loc">${escapeHtml(t.loc)}</div>` : ''}
+      </div>
+      <button class="del" data-id="${t.id}" aria-label="Usuń" ${me ? '' : 'disabled title="wybierz kim jesteś"'}>×</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteTrip(btn.dataset.id));
+  });
+}
+
+function renderFreeList(){
+  const el = document.getElementById('freeList');
+  const out = [];
+  let d = new Date(); d.setHours(0,0,0,0);
+  for(let i=0; i<60 && out.length<4; i++){
+    const ymd = dateStr(d);
+    if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  if(out.length===0){
+    el.innerHTML = '<div class="empty">Brak wspólnych wolnych dni w najbliższych 2 miesiącach.</div>';
+    return;
+  }
+  el.innerHTML = out.map(d => `<div class="free-item"><span>${d.toLocaleDateString('pl-PL',{weekday:'long'})}</span><span>${fmt(d)}</span></div>`).join('');
+}
+
+function buildMonthTable(monthDate){
+  const year = monthDate.getFullYear(), month = monthDate.getMonth();
+  const first = new Date(year, month, 1);
+  const startOffset = (first.getDay()+6)%7; // Monday=0
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = todayStr();
+
+  let cells = [];
+  for(let i=0;i<startOffset;i++) cells.push(null);
+  for(let d=1; d<=daysInMonth; d++) cells.push(d);
+  while(cells.length % 7 !== 0) cells.push(null);
+
+  let rows = '';
+  for(let r=0; r<cells.length; r+=7){
+    rows += '<tr>' + cells.slice(r, r+7).map(d=>{
+      if(d===null) return '<td><div class="day pad">0</div></td>';
+      const ymd = dateStr(new Date(year, month, d));
+      const busyM = isBusy('michal', ymd);
+      const busyO = isBusy('ona', ymd);
+      const remoteM = isRemote('michal', ymd);
+      const remoteO = isRemote('ona', ymd);
+      let cls = 'day';
+      if(ymd < today) cls += ' past';
+      if(busyM && busyO) cls += ' busy-both';
+      else if(busyM) cls += ' busy-michal';
+      else if(busyO) cls += ' busy-ona';
+      else if(ymd >= today) cls += ' free';
+      const remoteDots = (remoteM || remoteO)
+        ? `<div class="day-remote-marks">${remoteM ? '<span class="remote-dot michal" title="Michał zdalnie"></span>' : ''}${remoteO ? '<span class="remote-dot ona" title="Agnieszka zdalnie"></span>' : ''}</div>`
+        : '';
+      return `<td><div class="${cls}"><div class="num">${d}</div>${remoteDots}</div></td>`;
+    }).join('') + '</tr>';
+  }
+
+  return `
+    <table class="cal">
+      <thead><tr>${DAY_NAMES.map(n=>`<th>${n}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function renderCalendar(){
+  const root = document.getElementById('calendarRoot');
+  const m1 = new Date(viewMonth);
+  const m2 = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 1);
+  document.getElementById('monthTitle').textContent =
+    `${MONTH_NAMES[m1.getMonth()]} ${m1.getFullYear()}`;
+  root.innerHTML = `
+    <div>${buildMonthTable(m1)}</div>
+    <div><div class="month-title" style="margin-bottom:6px;text-transform:capitalize;">${MONTH_NAMES[m2.getMonth()]} ${m2.getFullYear()}</div>${buildMonthTable(m2)}</div>
+  `;
+}
+
+document.getElementById('prevMonth').addEventListener('click', ()=>{
+  viewMonth.setMonth(viewMonth.getMonth()-1); renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', ()=>{
+  viewMonth.setMonth(viewMonth.getMonth()+1); renderCalendar();
+});
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderAll(){
+  renderTripList();
+  renderFreeList();
+  renderCalendar();
+  renderDiets();
+}
+
+function renderDiets(){
+  const el = document.getElementById('dietList');
+  const keys = Object.keys(PERSON_NAMES).filter(k=>profiles[k]);
+  if(keys.length===0){
+    el.innerHTML = '<div class="empty">Nikt jeszcze nie wpisał swoich preferencji.</div>';
+    return;
+  }
+  el.innerHTML = keys.map(k=>{
+    const p = profiles[k];
+    const tagClass = p.diet==='wegan' ? 'wegan' : (p.diet==='wege' ? 'wege' : (p.diet==='inne' ? 'inne' : ''));
+    const tag = p.diet ? `<span class="diet-tag ${tagClass}">${DIET_LABELS[p.diet] || p.diet}</span>` : '';
+    const allergenList = Array.isArray(p.allergens) ? p.allergens : (p.allergens ? [p.allergens] : []);
+    const allergenHtml = allergenList.length
+      ? `<div class="diet-allergen-tags">${allergenList.map(a=>`<span class="diet-allergen-tag">${escapeHtml(a)}</span>`).join('')}</div>`
+      : '';
+    return `
+      <div class="diet-item">
+        <div class="diet-meta">
+          <div class="diet-name">${PERSON_NAMES[k]}</div>
+          ${tag}
+          ${allergenHtml}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function deleteTrip(id){
+  trips = trips.filter(t=>t.id!==id);
+  renderAll();
+  try{ await deleteDoc(doc(firestore, 'trips', id)); }
+  catch(e){ setStatus('Nie udało się usunąć — spróbuj ponownie.'); }
+}
+
+function setStatus(msg){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  if(msg) setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; }, 3000);
+}
+
+document.getElementById('tripForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
+  const start = document.getElementById('start').value;
+  const end = document.getElementById('end').value;
+  const loc = document.getElementById('loc').value.trim();
+  const remote = document.getElementById('remoteCheck').checked;
+  if(!start || !end){ setStatus('Podaj obie daty.'); return; }
+  if(end < start){ setStatus('Data "do" musi być po dacie "od".'); return; }
+
+  const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  const trip = { id, person: me, start, end, loc, remote, createdAt: Date.now() };
+  trips.push(trip);
+  renderAll();
+  e.target.reset();
+  try{ await setDoc(doc(firestore, 'trips', id), trip); }
+  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+});
+
+document.getElementById('dietForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
+  addAllergenFromInput();
+  const diet = document.getElementById('dietType').value;
+  const allergens = [...pendingAllergens];
+  const profile = { person: me, diet, allergens, updatedAt: Date.now() };
+  profiles[me] = profile;
+  renderDiets();
+  try{ await setDoc(doc(firestore, 'profiles', me), profile); setStatus('Zapisano.'); }
+  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+});
+
+function init(){
+  renderAll();
+  onSnapshot(tripsCol, snap=>{
+    trips = snap.docs.map(d=>d.data());
+    renderAll();
+  }, err=>{
+    setStatus('Brak połączenia z bazą — sprawdź internet.');
+  });
+  onSnapshot(profilesCol, snap=>{
+    profiles = {};
+    snap.docs.forEach(d=>{ profiles[d.id] = d.data(); });
+    renderDiets();
+    fillDietForm();
+  });
+}
+init();
+</script>
+</body>
+</html>
