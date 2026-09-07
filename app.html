@@ -571,10 +571,15 @@ let profiles = {};
 let me = localStorage.getItem('kolacja_who') || null;
 let viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0);
 
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){ return dateStr(new Date()); }
 function fmt(d){ return d.toLocaleDateString('pl-PL', {day:'numeric', month:'long'}); }
 function parse(s){ const [y,m,day] = s.split('-').map(Number); return new Date(y, m-1, day); }
-function dateStr(d){ return d.toISOString().slice(0,10); }
+function dateStr(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 
 function setWho(person){
   me = person;
