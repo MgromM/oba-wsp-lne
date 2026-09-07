@@ -585,12 +585,14 @@ function dateStr(d){
 }
 
 function setWho(person){
+  if(editingTripId) cancelEditTrip();
   me = person;
   localStorage.setItem('kolacja_who', person);
   document.getElementById('btn-michal').setAttribute('data-active', person==='michal');
   document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
   fillDietForm();
   maybeShowOnboarding();
+  renderTripList();
 }
 
 function onboardKey(person){ return 'kolacja_onboarded_' + person; }
