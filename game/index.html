@@ -2,29 +2,44 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Basketball Game</title>
 	<script type="text/javascript" src="js/phaser.min.js"></script>
     <style type="text/css">
-        body {
+        html, body {
             margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #fff;
         }
 				canvas {
-					margin: 0 auto;
-					border: thin solid black;
+					display: block;
+					touch-action: none;
 				}
 				span {
 					display: block;
-					margin: 30px auto;
-					width: 500px;
+					margin: 12px auto 0;
+					width: 100%;
+					max-width: 500px;
 					text-align: center;
+					font-family: Arial, sans-serif;
+					font-size: 13px;
+					color: #777;
+				}
+				@media (max-width: 640px) {
+					span { display: none; }
 				}
 				.back-link {
-					display: block;
-					text-align: center;
-					margin: 16px auto 0;
+					position: fixed;
+					top: max(8px, env(safe-area-inset-top));
+					left: max(8px, env(safe-area-inset-left));
+					z-index: 10;
 					font-family: Arial, sans-serif;
-					font-size: 14px;
+					font-size: 13px;
 					color: #555;
+					background: rgba(255,255,255,.85);
+					padding: 6px 10px;
+					border-radius: 999px;
 					text-decoration: none;
 				}
 				.back-link:hover {
@@ -113,6 +128,11 @@ function create() {
 	spawn = game.add.audio('spawn');
 
 	game.stage.backgroundColor = "#ffffff";
+
+	game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+	game.scale.pageAlignHorizontally = true;
+	game.scale.pageAlignVertically = true;
+	game.scale.refresh();
 
 	// high_score_text = game.add.text(450, 25, 'High Score\n' + high_score, { font: 'Arial', fontSize: '32px', fill: '#000', align: 'center' });
 	current_score_text = game.add.text(187, 312, '', { font: 'Arial', fontSize: '40px', fill: '#000', align: 'center' }); // 300, 500
