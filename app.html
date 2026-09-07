@@ -328,6 +328,23 @@
     padding:20px;
   }
   .onboard-overlay[hidden]{ display:none; }
+
+  .page-footer{
+    display:flex; justify-content:center; margin-top:34px; padding-top:4px;
+  }
+  .footer-easter-egg{
+    font-size:17px;
+    opacity:.35;
+    text-decoration:none;
+    filter:grayscale(60%);
+    transition:opacity .2s, filter .2s, transform .2s;
+    padding:8px;
+  }
+  .footer-easter-egg:hover, .footer-easter-egg:focus-visible{
+    opacity:1;
+    filter:none;
+    transform:scale(1.15);
+  }
   .onboard-card{
     background:var(--paper-raised);
     border:1px solid var(--line);
@@ -487,6 +504,10 @@
       </div>
     </div>
   </div>
+
+  <footer class="page-footer">
+    <a href="game/index.html" class="footer-easter-egg" title="Nudzi się?">🏀</a>
+  </footer>
 </div>
 
 <script type="module">
