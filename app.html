@@ -990,10 +990,9 @@ function buildMonthTable(monthDate){
       else if(busyO) cls += ' busy-ona';
       else if(ymd >= today) cls += ' free';
       if(confirmed && confirmed.date === ymd) cls += ' confirmed';
-      const heart = (confirmed && confirmed.date === ymd) ? ' 💛' : '';
       const clickable = (busyM || busyO) ? ' data-ymd="'+ymd+'" tabindex="0" role="button"' : '';
       if(busyM || busyO) cls += ' clickable';
-      return `<td><div class="${cls}"${clickable}><div class="num">${d}${heart}</div></div></td>`;
+      return `<td><div class="${cls}"${clickable}><div class="num">${d}</div></div></td>`;
     }).join('') + '</tr>';
   }
 
