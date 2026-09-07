@@ -410,7 +410,7 @@
   <div class="whoami">
     <span>Jesteś:</span>
     <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
-    <button class="who-btn" data-person="ona" id="btn-ona">Agnieszka</button>
+    <button class="who-btn" data-person="ona" id="btn-ona">Aga</button>
   </div>
 
   <div class="grid">
@@ -484,7 +484,7 @@
       <div class="legend">
         <span><i class="free"></i>oboje wolni</span>
         <span><i class="michal"></i>Michał zajęty</span>
-        <span><i class="ona"></i>Agnieszka zajęta</span>
+        <span><i class="ona"></i>Aga zajęta</span>
       </div>
     </div>
   </div>
@@ -514,7 +514,7 @@ const fbApp = initializeApp(firebaseConfig);
 const firestore = getFirestore(fbApp);
 const tripsCol = collection(firestore, 'trips');
 const profilesCol = collection(firestore, 'profiles');
-const PERSON_NAMES = { michal: 'Michał', ona: 'Agnieszka' };
+const PERSON_NAMES = { michal: 'Michał', ona: 'Aga' };
 const DIET_LABELS = { wege: 'Wegetariańska', wegan: 'Wegańska', inne: 'Inne' };
 
 const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
