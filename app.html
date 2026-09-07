@@ -584,6 +584,7 @@ const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
 const MONTH_NAMES = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
 
 let trips = [];
+let editingTripId = null;
 let tripsLoaded = false;
 let profiles = {};
 let me = localStorage.getItem('kolacja_who') || null;
@@ -767,8 +768,6 @@ function renderTripList(){
     btn.addEventListener('click', ()=>startEditTrip(btn.dataset.id));
   });
 }
-
-let editingTripId = null;
 
 function startEditTrip(id){
   const t = trips.find(x=>x.id===id);
