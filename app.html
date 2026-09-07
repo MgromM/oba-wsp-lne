@@ -340,6 +340,23 @@
   .day.confirmed .num{ color:#2b2630; }
   .day.confirmed .num::after{ content:none; }
 
+  .fireworks-overlay{
+    position:fixed; inset:0; z-index:200; pointer-events:none; overflow:hidden;
+  }
+  .firework-particle{
+    position:absolute;
+    transform: translate(-50%,-50%);
+    animation: firework-burst 1.3s ease-out forwards;
+    will-change: transform, opacity;
+  }
+  @keyframes firework-burst{
+    0%{ transform: translate(-50%,-50%) translate(0,0) scale(.4) rotate(0deg); opacity:1; }
+    100%{ transform: translate(-50%,-50%) translate(var(--dx), var(--dy)) scale(1) rotate(45deg); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .fireworks-overlay{ display:none; }
+  }
+
   .onboard-overlay{
     position:fixed; inset:0; z-index:100;
     background:color-mix(in srgb, var(--ink) 45%, transparent);
@@ -567,6 +584,7 @@ const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
 const MONTH_NAMES = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
 
 let trips = [];
+let tripsLoaded = false;
 let profiles = {};
 let me = localStorage.getItem('kolacja_who') || null;
 let viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0);
@@ -597,9 +615,18 @@ function setWho(person){
 
 function onboardKey(person){ return 'kolacja_onboarded_' + person; }
 
+let profilesLoaded = false;
+let pendingOnboardCheck = false;
+
 function maybeShowOnboarding(){
   if(!me) return;
   if(localStorage.getItem(onboardKey(me))) return;
+  if(!profilesLoaded){ pendingOnboardCheck = true; return; }
+  if(profiles[me]){
+    // Already has preferences saved from another device — don't ask again, just remember it here too.
+    localStorage.setItem(onboardKey(me), '1');
+    return;
+  }
   showOnboarding();
 }
 
@@ -717,7 +744,7 @@ function renderTripList(){
   const list = document.getElementById('tripList');
   const sorted = [...trips].sort((a,b)=>a.start.localeCompare(b.start));
   if(sorted.length===0){
-    list.innerHTML = '<div class="empty">Nikt jeszcze nic nie wpisał.</div>';
+    list.innerHTML = `<div class="empty">${tripsLoaded ? 'Nikt jeszcze nic nie wpisał.' : 'Wczytywanie…'}</div>`;
     return;
   }
   list.innerHTML = sorted.map(t => `
@@ -768,6 +795,10 @@ const FREE_SEARCH_DAYS = 365;
 
 function renderFreeList(){
   const el = document.getElementById('freeList');
+  if(!tripsLoaded){
+    el.innerHTML = '<div class="empty">Wczytywanie…</div>';
+    return;
+  }
   const out = [];
   let d = parse(todayStr());
   for(let i=0; i<FREE_SEARCH_DAYS && out.length<6; i++){
@@ -809,8 +840,36 @@ function renderConfirmed(){
   document.getElementById('unconfirmBtn').addEventListener('click', unconfirmDate);
 }
 
+function playFireworks(){
+  const overlay = document.createElement('div');
+  overlay.className = 'fireworks-overlay';
+  document.body.appendChild(overlay);
+  const emojis = ['🎉','✨','🎆','💛','🧨','🎊'];
+  const count = 44;
+  for(let i=0;i<count;i++){
+    const p = document.createElement('span');
+    p.className = 'firework-particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    const angle = Math.random()*2*Math.PI;
+    const dist = 110 + Math.random()*260;
+    p.style.setProperty('--dx', Math.cos(angle)*dist+'px');
+    p.style.setProperty('--dy', Math.sin(angle)*dist+'px');
+    p.style.left = (40 + Math.random()*20) + '%';
+    p.style.top = (30 + Math.random()*20) + '%';
+    p.style.fontSize = (14+Math.random()*20)+'px';
+    p.style.animationDelay = (Math.random()*0.35)+'s';
+    overlay.appendChild(p);
+  }
+  setTimeout(()=>overlay.remove(), 2200);
+}
+
 async function confirmDate(ymd){
   if(!me) return;
+  if(isBusy('michal', ymd) || isBusy('ona', ymd)){
+    setStatus('Ten dzień właśnie przestał być wolny — wybierz inny.');
+    renderFreeList();
+    return;
+  }
   confirmed = { date: ymd, confirmedBy: me, confirmedAt: Date.now() };
   renderConfirmed();
   renderFreeList();
@@ -947,7 +1006,12 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   if(editingTripId){
     const id = editingTripId;
     const existing = trips.find(t=>t.id===id);
-    const trip = { id, person: me, start, end, loc, createdAt: existing ? existing.createdAt : Date.now() };
+    if(!existing){
+      setStatus('Ten termin został w międzyczasie usunięty.');
+      cancelEditTrip();
+      return;
+    }
+    const trip = { id, person: me, start, end, loc, createdAt: existing.createdAt };
     trips = trips.map(t=>t.id===id ? trip : t);
     renderAll();
     cancelEditTrip();
@@ -984,6 +1048,11 @@ function init(){
   renderAll();
   onSnapshot(tripsCol, snap=>{
     trips = snap.docs.map(d=>d.data());
+    tripsLoaded = true;
+    if(editingTripId && !trips.some(t=>t.id===editingTripId)){
+      setStatus('Edytowany termin został w międzyczasie usunięty.');
+      cancelEditTrip();
+    }
     renderAll();
   }, err=>{
     setStatus('Brak połączenia z bazą — sprawdź internet.');
@@ -991,11 +1060,21 @@ function init(){
   onSnapshot(profilesCol, snap=>{
     profiles = {};
     snap.docs.forEach(d=>{ profiles[d.id] = d.data(); });
+    profilesLoaded = true;
     renderDiets();
     fillDietForm();
+    if(pendingOnboardCheck){ pendingOnboardCheck = false; maybeShowOnboarding(); }
   });
+  let firstConfirmedSnapshot = true;
+  let previousConfirmedDate = null;
   onSnapshot(confirmedDocRef, snap=>{
     confirmed = snap.exists() ? snap.data() : null;
+    const newDate = confirmed ? confirmed.date : null;
+    if(!firstConfirmedSnapshot && newDate && newDate !== previousConfirmedDate){
+      playFireworks();
+    }
+    previousConfirmedDate = newDate;
+    firstConfirmedSnapshot = false;
     renderConfirmed();
     renderFreeList();
     renderCalendar();
