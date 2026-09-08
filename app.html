@@ -359,6 +359,7 @@
   .day-popover-row .dot{ margin-top:2px; }
   .day-popover-name{ font-weight:600; flex:none; }
   .day-popover-loc{ color:var(--ink-soft); }
+  .day-popover-distance{ color:var(--ink-soft); font-size:12px; }
   .day-popover-close{
     position:absolute; top:6px; right:6px; border:none; background:transparent;
     color:var(--ink-soft); cursor:pointer; font-size:15px; padding:4px 7px; line-height:1;
@@ -859,14 +860,19 @@ function haversineKm(a, b){
   return Math.round(R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h)));
 }
 
-function effectiveLocation(person){
-  const today = todayStr();
-  const activeTrip = trips.find(t=>t.person===person && today>=t.start && today<=t.end && t.lat!=null && t.lon!=null);
+function effectiveLocationOnDate(person, ymd){
+  const activeTrip = trips.find(t=>t.person===person && ymd>=t.start && ymd<=t.end && t.lat!=null && t.lon!=null);
   if(activeTrip) return { lat: activeTrip.lat, lon: activeTrip.lon, label: activeTrip.loc || 'w podróży' };
   const p = profiles[person];
   if(p && p.lat!=null && p.lon!=null) return { lat: p.lat, lon: p.lon, label: p.city };
   return null;
 }
+
+function effectiveLocation(person){
+  return effectiveLocationOnDate(person, todayStr());
+}
+
+function otherPersonOf(person){ return person === 'michal' ? 'ona' : 'michal'; }
 
 function renderDistance(){
   const card = document.getElementById('distanceCard');
@@ -1362,7 +1368,15 @@ function showDayPopover(dayEl){
     if(isBusy(p, ymd)){
       const t = trips.find(tr=>tr.person===p && ymd>=tr.start && ymd<=tr.end);
       const locText = t && t.loc ? escapeHtml(t.loc) : 'brak podanej lokalizacji';
-      rows.push(`<div class="day-popover-row"><span class="dot ${p}"></span><span class="day-popover-name">${PERSON_NAMES[p]}:</span><span class="day-popover-loc">${locText}</span></div>`);
+      let distanceText = '';
+      if(t && t.lat!=null && t.lon!=null){
+        const otherLoc = effectiveLocationOnDate(otherPersonOf(p), ymd);
+        if(otherLoc){
+          const km = haversineKm({lat:t.lat, lon:t.lon}, otherLoc);
+          distanceText = ` <span class="day-popover-distance">(${km} km stąd)</span>`;
+        }
+      }
+      rows.push(`<div class="day-popover-row"><span class="dot ${p}"></span><span class="day-popover-name">${PERSON_NAMES[p]}:</span><span class="day-popover-loc">${locText}${distanceText}</span></div>`);
     }
   });
   pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">×</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}`;
