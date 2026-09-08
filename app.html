@@ -417,6 +417,8 @@
   .confirmed-date{ font-family:'Fraunces',serif; font-weight:600; font-size:22px; }
   .confirmed-meta{ color:var(--ink-soft); font-size:13px; }
   .confirmed-countdown{ font-size:14px; color:var(--ink); font-weight:600; }
+  .confirmed-weather{ font-size:14px; color:var(--ink); }
+  .confirmed-weather[hidden]{ display:none; }
   .confirmed-actions{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:4px; }
   .ics-btn{
     border:none; background:none; padding:0; font:inherit; cursor:pointer;
@@ -551,6 +553,22 @@
       <div class="onboard-actions">
         <button type="button" class="onboard-skip" id="obSkip2">Pomiń</button>
         <button type="button" class="primary" id="obFinish">Zapisz i przejdź dalej</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="onboard-overlay" id="confirmCityOverlay" hidden>
+  <div class="onboard-card">
+    <div class="onboard-step">
+      <div class="onboard-eyebrow">Ostatni krok</div>
+      <h2>W jakim mieście jecie kolację?</h2>
+      <p class="onboard-sub">Dzięki temu pokażemy pogodę na ten dzień.</p>
+      <input type="text" id="confirmCityInput" maxlength="60" placeholder="np. Kraków" list="plCitiesList" autocomplete="off">
+      <div class="onboard-error" id="confirmCityError" hidden></div>
+      <div class="onboard-actions">
+        <button type="button" class="onboard-skip" id="confirmCityCancel">Anuluj</button>
+        <button type="button" class="primary" id="confirmCityOk">Potwierdź kolację</button>
       </div>
     </div>
   </div>
@@ -1166,8 +1184,22 @@ function renderFreeList(){
     </div>`;
   }).join('');
   el.querySelectorAll('.pick-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>confirmDate(btn.dataset.ymd));
+    btn.addEventListener('click', ()=>openConfirmCityModal(btn.dataset.ymd));
   });
+}
+
+let pendingConfirmYmd = null;
+
+function openConfirmCityModal(ymd){
+  pendingConfirmYmd = ymd;
+  document.getElementById('confirmCityInput').value = '';
+  document.getElementById('confirmCityError').hidden = true;
+  document.getElementById('confirmCityOverlay').hidden = false;
+}
+
+function closeConfirmCityModal(){
+  pendingConfirmYmd = null;
+  document.getElementById('confirmCityOverlay').hidden = true;
 }
 
 function countdownText(d){
@@ -1230,6 +1262,7 @@ function renderConfirmed(){
     <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
     <div class="confirmed-meta">Wybrane przez ${PERSON_NAMES[confirmed.confirmedBy] || confirmed.confirmedBy}</div>
     ${countdown ? `<div class="confirmed-countdown" id="confirmedCountdown">${countdown}</div>` : ''}
+    <div class="confirmed-weather" id="confirmedWeather" hidden></div>
     <div class="confirmed-actions">
       <button class="ics-btn" id="icsBtn">Dodaj do kalendarza</button>
       <button class="unconfirm-btn" id="unconfirmBtn" ${me ? '' : 'disabled'}>Odwołaj</button>
@@ -1238,6 +1271,7 @@ function renderConfirmed(){
   `;
   document.getElementById('unconfirmBtn').addEventListener('click', unconfirmDate);
   document.getElementById('icsBtn').addEventListener('click', exportConfirmedToIcs);
+  renderConfirmedWeather();
   confirmedCountdownInterval = setInterval(()=>{
     const el = document.getElementById('confirmedCountdown');
     const text = countdownText(parse(confirmed.date));
@@ -1330,19 +1364,82 @@ function playFireworks(){
   tick();
 }
 
-async function confirmDate(ymd){
+async function confirmDate(ymd, city, lat, lon){
   if(!me) return;
   if(isBusy('michal', ymd) || isBusy('ona', ymd)){
     setStatus('Ten dzień właśnie przestał być wolny — wybierz inny.');
     renderFreeList();
     return;
   }
-  confirmed = { date: ymd, confirmedBy: me, confirmedAt: Date.now() };
+  confirmed = { date: ymd, confirmedBy: me, confirmedAt: Date.now(), city: city || null, lat: lat ?? null, lon: lon ?? null };
   renderConfirmed();
   renderFreeList();
   renderCalendar();
   try{ await setDoc(confirmedDocRef, confirmed); }
   catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+}
+
+document.getElementById('confirmCityCancel').addEventListener('click', closeConfirmCityModal);
+document.getElementById('confirmCityOk').addEventListener('click', async ()=>{
+  const ymd = pendingConfirmYmd;
+  if(!ymd) return;
+  const input = document.getElementById('confirmCityInput');
+  const errorEl = document.getElementById('confirmCityError');
+  const city = input.value.trim();
+  if(!city){
+    errorEl.textContent = 'Podaj miasto.';
+    errorEl.hidden = false;
+    return;
+  }
+  const okBtn = document.getElementById('confirmCityOk');
+  okBtn.disabled = true;
+  const coords = await geocode(city);
+  okBtn.disabled = false;
+  if(!coords){
+    errorEl.textContent = 'Nie rozpoznano tego miasta — spróbuj inaczej.';
+    errorEl.hidden = false;
+    return;
+  }
+  closeConfirmCityModal();
+  await confirmDate(ymd, city, coords.lat, coords.lon);
+});
+
+const WEATHER_CODE_ICONS = {
+  0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
+  45: '🌫️', 48: '🌫️',
+  51: '🌦️', 53: '🌦️', 55: '🌦️',
+  61: '🌧️', 63: '🌧️', 65: '🌧️',
+  66: '🌧️', 67: '🌧️',
+  71: '🌨️', 73: '🌨️', 75: '🌨️', 77: '🌨️',
+  80: '🌦️', 81: '🌧️', 82: '⛈️',
+  85: '🌨️', 86: '🌨️',
+  95: '⛈️', 96: '⛈️', 99: '⛈️'
+};
+
+async function fetchConfirmedWeather(){
+  if(!confirmed || confirmed.lat==null || confirmed.lon==null) return null;
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${confirmed.lat}&longitude=${confirmed.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=Europe%2FWarsaw`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const idx = data?.daily?.time?.indexOf(confirmed.date);
+    if(idx == null || idx < 0) return null;
+    return {
+      max: Math.round(data.daily.temperature_2m_max[idx]),
+      min: Math.round(data.daily.temperature_2m_min[idx]),
+      rain: data.daily.precipitation_probability_max[idx],
+      icon: WEATHER_CODE_ICONS[data.daily.weathercode[idx]] || '🌡️'
+    };
+  }catch(e){ return null; }
+}
+
+async function renderConfirmedWeather(){
+  const el = document.getElementById('confirmedWeather');
+  if(!el) return;
+  const weather = await fetchConfirmedWeather();
+  if(!weather){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = `${weather.icon} ${weather.min}°–${weather.max}°C${weather.rain!=null ? ` · ${weather.rain}% szans na deszcz` : ''}${confirmed.city ? ` w ${confirmed.city}` : ''}`;
 }
 
 async function unconfirmDate(){
