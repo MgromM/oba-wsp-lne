@@ -501,7 +501,11 @@
     border:none; background:transparent; color:var(--ink-soft); font-family:inherit;
     font-size:13.5px; text-decoration:underline; cursor:pointer; padding:8px;
   }
+  .distance-map{ height:200px; border-radius:12px; margin-top:12px; overflow:hidden; }
+  .distance-map[hidden]{ display:none; }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 <div class="onboard-overlay" id="onboardOverlay" hidden>
@@ -585,6 +589,7 @@
       <div class="card distance-card" id="distanceCard" hidden>
         <h2>Odległość między wami</h2>
         <div id="distanceBody"></div>
+        <div class="distance-map" id="distanceMap" hidden></div>
       </div>
 
       <div class="card">
@@ -891,18 +896,42 @@ function effectiveLocation(person){
 }
 
 
+let distanceMapInstance = null;
+
+function renderDistanceMap(a, b){
+  const mapEl = document.getElementById('distanceMap');
+  if(typeof L === 'undefined'){ mapEl.hidden = true; return; }
+  mapEl.hidden = false;
+
+  if(distanceMapInstance){ distanceMapInstance.remove(); distanceMapInstance = null; }
+  const map = L.map(mapEl, { zoomControl:false, attributionControl:false, scrollWheelZoom:false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18 }).addTo(map);
+  L.marker([a.lat, a.lon]).addTo(map).bindTooltip(PERSON_NAMES.michal, {permanent:false});
+  L.marker([b.lat, b.lon]).addTo(map).bindTooltip(PERSON_NAMES.ona, {permanent:false});
+  L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color:'#b8365f', weight:2, dashArray:'6 6' }).addTo(map);
+  map.fitBounds([[a.lat, a.lon], [b.lat, b.lon]], { padding:[30,30] });
+  distanceMapInstance = map;
+}
+
 function renderDistance(){
   const card = document.getElementById('distanceCard');
   const body = document.getElementById('distanceBody');
+  const mapEl = document.getElementById('distanceMap');
   const a = effectiveLocation('michal');
   const b = effectiveLocation('ona');
-  if(!a || !b){ card.hidden = true; return; }
+  if(!a || !b){
+    card.hidden = true;
+    mapEl.hidden = true;
+    if(distanceMapInstance){ distanceMapInstance.remove(); distanceMapInstance = null; }
+    return;
+  }
   const km = haversineKm(a, b);
   card.hidden = false;
   body.innerHTML = `
     <div class="distance-km">${km} km</div>
     <div class="distance-meta">${PERSON_NAMES.michal}: ${escapeHtml(a.label || '?')} · ${PERSON_NAMES.ona}: ${escapeHtml(b.label || '?')}</div>
   `;
+  renderDistanceMap(a, b);
 }
 
 function seasonInfo(){
