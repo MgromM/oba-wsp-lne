@@ -368,6 +368,16 @@
   .pick-btn:hover{ background:var(--both-line); color:var(--paper-raised); }
   .status{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; min-height:16px; }
 
+  .distance-card{ text-align:center; }
+  .distance-km{ font-family:'Fraunces',serif; font-weight:600; font-size:28px; }
+  .distance-meta{ color:var(--ink-soft); font-size:13px; margin-top:4px; }
+
+  .calendar-card{ border-top-width:3px; transition:border-color .2s; }
+  body[data-season="wiosna"] .calendar-card{ border-top-color:#e893b3; }
+  body[data-season="lato"] .calendar-card{ border-top-color:#f4c150; }
+  body[data-season="jesien"] .calendar-card{ border-top-color:#c9722f; }
+  body[data-season="zima"] .calendar-card{ border-top-color:#7fb3d5; }
+
   .confirmed-card{ border-color:var(--both-line); background:var(--both-bg); }
   .confirmed-card h2{ color:var(--ink); }
   .confirmed-body{ display:flex; flex-direction:column; gap:4px; }
@@ -518,6 +528,11 @@
         <div class="confirmed-body" id="confirmedBody"></div>
       </div>
 
+      <div class="card distance-card" id="distanceCard" hidden>
+        <h2>Odległość między wami</h2>
+        <div id="distanceBody"></div>
+      </div>
+
       <div class="card">
         <h2>Najbliższe wolne wieczory (oboje)</h2>
         <div class="free-list" id="freeList"></div>
@@ -557,6 +572,10 @@
         <summary>Preferencje żywieniowe</summary>
         <form class="trip" id="dietForm">
           <div>
+            <label for="cityInput">Twoje miasto</label>
+            <input type="text" id="cityInput" maxlength="60" placeholder="np. Warszawa">
+          </div>
+          <div>
             <label for="dietType">Dieta</label>
             <select id="dietType">
               <option value="">Bez ograniczeń</option>
@@ -579,8 +598,8 @@
       </details>
     </div>
 
-    <div class="card">
-      <h2>Kalendarz</h2>
+    <div class="card calendar-card">
+      <h2 id="calendarHeading">Kalendarz</h2>
       <div class="month-nav">
         <button id="prevMonth" aria-label="Poprzedni miesiąc">‹</button>
         <div class="month-title" id="monthTitle"></div>
@@ -696,8 +715,66 @@ let pendingAllergens = [];
 function fillDietForm(){
   const mine = me ? profiles[me] : null;
   document.getElementById('dietType').value = mine ? (mine.diet || '') : '';
+  document.getElementById('cityInput').value = mine ? (mine.city || '') : '';
   pendingAllergens = mine && Array.isArray(mine.allergens) ? [...mine.allergens] : [];
   renderAllergenTags();
+}
+
+async function geocode(query){
+  if(!query) return null;
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if(data && data[0]) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  }catch(e){}
+  return null;
+}
+
+function haversineKm(a, b){
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI/180;
+  const dLon = (b.lon - a.lon) * Math.PI/180;
+  const la1 = a.lat * Math.PI/180, la2 = b.lat * Math.PI/180;
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h)));
+}
+
+function effectiveLocation(person){
+  const today = todayStr();
+  const activeTrip = trips.find(t=>t.person===person && today>=t.start && today<=t.end && t.lat!=null && t.lon!=null);
+  if(activeTrip) return { lat: activeTrip.lat, lon: activeTrip.lon, label: activeTrip.loc || 'w podróży' };
+  const p = profiles[person];
+  if(p && p.lat!=null && p.lon!=null) return { lat: p.lat, lon: p.lon, label: p.city };
+  return null;
+}
+
+function renderDistance(){
+  const card = document.getElementById('distanceCard');
+  const body = document.getElementById('distanceBody');
+  const a = effectiveLocation('michal');
+  const b = effectiveLocation('ona');
+  if(!a || !b){ card.hidden = true; return; }
+  const km = haversineKm(a, b);
+  card.hidden = false;
+  body.innerHTML = `
+    <div class="distance-km">${km} km</div>
+    <div class="distance-meta">${PERSON_NAMES.michal}: ${escapeHtml(a.label || '?')} · ${PERSON_NAMES.ona}: ${escapeHtml(b.label || '?')}</div>
+  `;
+}
+
+function seasonInfo(){
+  const month = parse(todayStr()).getMonth() + 1;
+  if(month>=3 && month<=5) return { name:'wiosna', emoji:'🌸' };
+  if(month>=6 && month<=8) return { name:'lato', emoji:'☀️' };
+  if(month>=9 && month<=11) return { name:'jesien', emoji:'🍂' };
+  return { name:'zima', emoji:'❄️' };
+}
+
+function applySeasonTheme(){
+  const s = seasonInfo();
+  document.body.setAttribute('data-season', s.name);
+  const heading = document.getElementById('calendarHeading');
+  if(heading) heading.textContent = `Kalendarz ${s.emoji}`;
 }
 
 function renderAllergenTags(){
@@ -1173,6 +1250,7 @@ function renderAll(){
   renderCalendar();
   renderDiets();
   renderConfirmed();
+  renderDistance();
 }
 
 function renderDiets(){
@@ -1231,7 +1309,8 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
       cancelEditTrip();
       return;
     }
-    const trip = { id, person: me, start, end, loc, createdAt: existing.createdAt };
+    const geo = loc && loc !== existing.loc ? await geocode(loc) : (loc === existing.loc ? { lat: existing.lat, lon: existing.lon } : null);
+    const trip = { id, person: me, start, end, loc, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, createdAt: existing.createdAt };
     trips = trips.map(t=>t.id===id ? trip : t);
     renderAll();
     cancelEditTrip();
@@ -1241,7 +1320,8 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   }
 
   const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-  const trip = { id, person: me, start, end, loc, createdAt: Date.now() };
+  const geo = loc ? await geocode(loc) : null;
+  const trip = { id, person: me, start, end, loc, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, createdAt: Date.now() };
   trips.push(trip);
   renderAll();
   e.target.reset();
@@ -1257,9 +1337,13 @@ document.getElementById('dietForm').addEventListener('submit', async (e)=>{
   addAllergenFromInput();
   const diet = document.getElementById('dietType').value;
   const allergens = [...pendingAllergens];
-  const profile = { person: me, diet, allergens, updatedAt: Date.now() };
+  const city = document.getElementById('cityInput').value.trim();
+  const existing = profiles[me];
+  const geo = city && city !== (existing && existing.city) ? await geocode(city) : (city === (existing && existing.city) ? { lat: existing.lat, lon: existing.lon } : null);
+  const profile = { person: me, diet, allergens, city, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, updatedAt: Date.now() };
   profiles[me] = profile;
   renderDiets();
+  renderDistance();
   try{ await setDoc(doc(firestore, 'profiles', me), profile); setStatus('Zapisano.'); }
   catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
 });
@@ -1301,6 +1385,7 @@ function init(){
   });
 }
 init();
+applySeasonTheme();
 
 function initInstallBanner(){
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
