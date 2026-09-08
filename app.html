@@ -333,6 +333,11 @@
     padding:5px 6px;
     font-variant-numeric:tabular-nums;
     font-size:13px;
+    overflow:hidden;
+  }
+  .day .num{ white-space:nowrap; }
+  @media (max-width:380px){
+    .day.free .num::after{ display:none; }
   }
   .day.pad{ visibility:hidden; }
   .day.past{ opacity:.35; }
