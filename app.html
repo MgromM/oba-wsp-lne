@@ -90,6 +90,11 @@
     color:var(--ink-soft);
     font-size:14.5px;
   }
+  .greeting{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:16px;
+    color:var(--ink) !important;
+  }
 
   .whoami{
     display:flex;
@@ -513,6 +518,7 @@
 <div class="wrap">
   <header>
     <h1>Termin na kolację</h1>
+    <p class="greeting" id="greeting" hidden></p>
   </header>
 
   <div class="offline-pill" id="offlinePill" hidden>
@@ -679,12 +685,28 @@ function dateStr(d){
   return `${y}-${m}-${day}`;
 }
 
+function warsawHour(){
+  return parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Warsaw', hour: 'numeric', hour12: false }).format(new Date()), 10);
+}
+
+function updateGreeting(){
+  const el = document.getElementById('greeting');
+  if(!me){ el.hidden = true; return; }
+  const hour = warsawHour();
+  const isEvening = hour >= 18 || hour < 5;
+  const word = isEvening ? 'Dobry wieczór' : 'Dzień dobry';
+  const emoji = isEvening ? '🌙' : '☀️';
+  el.textContent = `${word}, ${PERSON_NAMES[me]} ${emoji}`;
+  el.hidden = false;
+}
+
 function setWho(person){
   if(editingTripId) cancelEditTrip();
   me = person;
   localStorage.setItem('kolacja_who', person);
   document.getElementById('btn-michal').setAttribute('data-active', person==='michal');
   document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
+  updateGreeting();
   fillDietForm();
   maybeShowOnboarding();
   renderAll();
@@ -1427,6 +1449,7 @@ function init(){
 }
 init();
 applySeasonTheme();
+setInterval(updateGreeting, 5*60*1000);
 
 function initInstallBanner(){
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
