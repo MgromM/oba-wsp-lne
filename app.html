@@ -465,7 +465,7 @@
     margin:0 0 8px; text-wrap:balance;
   }
   .onboard-sub{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
-  .onboard-card select{
+  .onboard-card select, .onboard-card input[type="text"]{
     width:100%; padding:11px 10px; border-radius:9px; border:1px solid var(--line);
     background:var(--paper); color:var(--ink); font-family:inherit; font-size:16px;
   }
@@ -482,8 +482,19 @@
 <body>
 <div class="onboard-overlay" id="onboardOverlay" hidden>
   <div class="onboard-card">
-    <div class="onboard-step" id="obStep1">
-      <div class="onboard-eyebrow">Krok 1 z 2</div>
+    <div class="onboard-step" id="obStep0">
+      <div class="onboard-eyebrow">Krok 1 z 3</div>
+      <h2>Zanim zaczniesz — skąd jesteś?</h2>
+      <p class="onboard-sub">To pomoże policzyć, ile dzieli was kilometrów.</p>
+      <input type="text" id="obCityInput" maxlength="60" placeholder="np. Warszawa">
+      <div class="onboard-actions">
+        <button type="button" class="onboard-skip" id="obSkip0">Pomiń</button>
+        <button type="button" class="primary" id="obNext0">Dalej</button>
+      </div>
+    </div>
+
+    <div class="onboard-step" id="obStep1" hidden>
+      <div class="onboard-eyebrow">Krok 2 z 3</div>
       <h2>Zanim zaczniesz — jaka dieta?</h2>
       <p class="onboard-sub">To pomoże wybrać restaurację, w której oboje coś zjecie.</p>
       <select id="obDietType">
@@ -499,7 +510,7 @@
     </div>
 
     <div class="onboard-step" id="obStep2" hidden>
-      <div class="onboard-eyebrow">Krok 2 z 2</div>
+      <div class="onboard-eyebrow">Krok 3 z 3</div>
       <h2>Alergeny albo czego nie jesz</h2>
       <p class="onboard-sub">Dodaj tyle, ile potrzebujesz — jeden na raz.</p>
       <div class="tag-input-row">
@@ -587,10 +598,6 @@
       <details class="card details-card">
         <summary>Preferencje żywieniowe</summary>
         <form class="trip" id="dietForm">
-          <div>
-            <label for="cityInput">Twoje miasto</label>
-            <input type="text" id="cityInput" maxlength="60" placeholder="np. Warszawa">
-          </div>
           <div>
             <label for="dietType">Dieta</label>
             <select id="dietType">
@@ -734,10 +741,12 @@ function finishOnboarding(){
 }
 
 function showOnboarding(){
+  document.getElementById('obCityInput').value = '';
   document.getElementById('obDietType').value = '';
   obPendingAllergens = [];
   renderObAllergenTags();
-  document.getElementById('obStep1').hidden = false;
+  document.getElementById('obStep0').hidden = false;
+  document.getElementById('obStep1').hidden = true;
   document.getElementById('obStep2').hidden = true;
   document.getElementById('onboardOverlay').hidden = false;
 }
@@ -747,7 +756,6 @@ let pendingAllergens = [];
 function fillDietForm(){
   const mine = me ? profiles[me] : null;
   document.getElementById('dietType').value = mine ? (mine.diet || '') : '';
-  document.getElementById('cityInput').value = mine ? (mine.city || '') : '';
   pendingAllergens = mine && Array.isArray(mine.allergens) ? [...mine.allergens] : [];
   renderAllergenTags();
 }
@@ -867,6 +875,12 @@ document.getElementById('obAllergenInput').addEventListener('keydown', (e)=>{
   if(e.key==='Enter'){ e.preventDefault(); addObAllergenFromInput(); }
 });
 
+document.getElementById('obNext0').addEventListener('click', ()=>{
+  document.getElementById('obStep0').hidden = true;
+  document.getElementById('obStep1').hidden = false;
+});
+document.getElementById('obSkip0').addEventListener('click', finishOnboarding);
+
 document.getElementById('obNext1').addEventListener('click', ()=>{
   document.getElementById('obStep1').hidden = true;
   document.getElementById('obStep2').hidden = false;
@@ -877,11 +891,14 @@ document.getElementById('obSkip2').addEventListener('click', finishOnboarding);
 
 document.getElementById('obFinish').addEventListener('click', async ()=>{
   addObAllergenFromInput();
+  const city = document.getElementById('obCityInput').value.trim();
   const diet = document.getElementById('obDietType').value;
   const allergens = [...obPendingAllergens];
-  const profile = { person: me, diet, allergens, updatedAt: Date.now() };
+  const geo = city ? await geocode(city) : null;
+  const profile = { person: me, diet, allergens, city: city || null, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, updatedAt: Date.now() };
   profiles[me] = profile;
   renderDiets();
+  renderDistance();
   fillDietForm();
   finishOnboarding();
   try{ await setDoc(doc(firestore, 'profiles', me), profile); }
@@ -1367,10 +1384,8 @@ document.getElementById('dietForm').addEventListener('submit', async (e)=>{
   addAllergenFromInput();
   const diet = document.getElementById('dietType').value;
   const allergens = [...pendingAllergens];
-  const city = document.getElementById('cityInput').value.trim();
-  const existing = profiles[me];
-  const geo = city && city !== (existing && existing.city) ? await geocode(city) : (city === (existing && existing.city) ? { lat: existing.lat, lon: existing.lon } : null);
-  const profile = { person: me, diet, allergens, city, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, updatedAt: Date.now() };
+  const existing = profiles[me] || {};
+  const profile = { person: me, diet, allergens, city: existing.city || null, lat: existing.lat ?? null, lon: existing.lon ?? null, updatedAt: Date.now() };
   profiles[me] = profile;
   renderDiets();
   renderDistance();
