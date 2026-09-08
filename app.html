@@ -465,6 +465,8 @@
     margin:0 0 8px; text-wrap:balance;
   }
   .onboard-sub{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
+  .onboard-error{ color:var(--danger); font-size:13px; margin-top:8px; }
+  .onboard-error[hidden]{ display:none; }
   .onboard-card select, .onboard-card input[type="text"]{
     width:100%; padding:11px 10px; border-radius:9px; border:1px solid var(--line);
     background:var(--paper); color:var(--ink); font-family:inherit; font-size:16px;
@@ -486,10 +488,12 @@
       <div class="onboard-eyebrow">Krok 1 z 3</div>
       <h2>Zanim zaczniesz — skąd jesteś?</h2>
       <p class="onboard-sub">To pomoże policzyć, ile dzieli was kilometrów.</p>
-      <input type="text" id="obCityInput" maxlength="60" placeholder="np. Warszawa">
+      <input type="text" id="obCityInput" maxlength="60" placeholder="np. Warszawa" list="plCitiesList" autocomplete="off">
+      <datalist id="plCitiesList"></datalist>
+      <div class="onboard-error" id="obCityError" hidden></div>
       <div class="onboard-actions">
         <button type="button" class="onboard-skip" id="obSkip0">Pomiń</button>
-        <button type="button" class="primary" id="obNext0">Dalej</button>
+        <button type="button" class="primary" id="obNext0">Zapisz i dalej</button>
       </div>
     </div>
 
@@ -618,6 +622,7 @@
           <button type="submit" class="primary" id="dietSubmitBtn">Zapisz</button>
         </form>
         <div class="diet-list" id="dietList"></div>
+        <button type="button" class="ics-btn" id="changeCityBtn" style="margin-top:10px;">Zmień swoje miasto</button>
       </details>
     </div>
 
@@ -666,6 +671,42 @@ const profilesCol = collection(firestore, 'profiles');
 const confirmedDocRef = doc(firestore, 'meta', 'confirmed_date');
 let confirmed = null;
 const PERSON_NAMES = { michal: 'Michał', ona: 'Aga' };
+
+const POLISH_CITIES = [
+  'Warszawa','Kraków','Łódź','Wrocław','Poznań','Gdańsk','Szczecin','Bydgoszcz','Lublin','Białystok',
+  'Katowice','Gdynia','Częstochowa','Radom','Sosnowiec','Toruń','Kielce','Rzeszów','Gliwice','Zabrze',
+  'Olsztyn','Bielsko-Biała','Bytom','Zielona Góra','Rybnik','Ruda Śląska','Opole','Tychy','Gorzów Wielkopolski','Dąbrowa Górnicza',
+  'Płock','Elbląg','Wałbrzych','Włocławek','Tarnów','Chorzów','Koszalin','Kalisz','Legnica','Grudziądz',
+  'Słupsk','Jaworzno','Jastrzębie-Zdrój','Nowy Sącz','Jelenia Góra','Siedlce','Mysłowice','Konin','Piotrków Trybunalski',
+  'Inowrocław','Lubin','Ostrowiec Świętokrzyski','Suwałki','Stargard','Gniezno','Głogów','Zamość','Pabianice','Chełm',
+  'Wejherowo','Tomaszów Mazowiecki','Łomża','Przemyśl','Stalowa Wola','Kędzierzyn-Koźle','Tarnowskie Góry','Mielec','Ostrów Wielkopolski','Skierniewice',
+  'Świdnica','Piła','Racibórz','Legionowo','Będzin','Ełk','Świętochłowice','Krosno','Ostrołęka','Puławy',
+  'Starachowice','Zgierz','Bełchatów','Świnoujście','Wodzisław Śląski','Tczew','Otwock','Ciechanów','Sieradz','Nysa',
+  'Zawiercie','Skarżysko-Kamienna','Rumia','Kutno','Sopot','Malbork','Rzeszów','Biała Podlaska','Iława','Piekary Śląskie',
+  'Jarosław','Sandomierz','Nowa Sól','Żory','Knurów','Bolesławiec','Oświęcim','Mikołów','Żyrardów','Wołomin',
+  'Grodzisk Mazowiecki','Pruszków','Piaseczno','Sochaczew','Żywiec','Bochnia','Wieliczka','Myślenice','Chrzanów','Andrychów',
+  'Wadowice','Skawina','Ustroń','Cieszyn','Zakopane','Nowy Targ','Limanowa','Gorlice','Jasło','Dębica',
+  'Łańcut','Kolbuszowa','Leżajsk','Sanok','Krosno Odrzańskie','Środa Wielkopolska','Leszno','Rawicz','Kościan','Śrem',
+  'Trzcianka','Chodzież','Turek','Koło','Września','Jarocin','Krotoszyn','Ostrzeszów','Kępno','Nowy Tomyśl',
+  'Wolsztyn','Międzychód','Szamotuły','Oborniki','Wągrowiec','Żnin','Mogilno','Nakło nad Notecią','Sępólno Krajeńskie','Chojnice',
+  'Człuchów','Bytów','Kartuzy','Kościerzyna','Starogard Gdański','Pruszcz Gdański','Kwidzyn','Sztum','Nowy Dwór Gdański','Puck',
+  'Lębork','Słupca','Gostyń','Gostynin','Sierpc','Mława','Ostrów Mazowiecka','Wyszków','Węgrów','Sokołów Podlaski',
+  'Radzyń Podlaski','Łuków','Biłgoraj','Krasnystaw','Hrubieszów','Tomaszów Lubelski','Kraśnik','Świdnik','Łęczna','Opole Lubelskie',
+  'Janów Lubelski','Lubartów','Parczew','Włodawa','Zwoleń','Kozienice','Grójec','Białobrzegi','Przysucha','Szydłowiec',
+  'Końskie','Opoczno','Radomsko','Wieluń','Pajęczno','Bełżyce','Poddębice','Łask','Zduńska Wola','Rawa Mazowiecka',
+  'Brzeziny','Głowno','Sulejów','Aleksandrów Łódzki','Konstantynów Łódzki','Ozorków','Łowicz','Kutno','Gąbin','Gostynin',
+  'Nowy Sącz','Bochnia','Brzesko','Tarnobrzeg','Nisko','Kolbuszowa','Ropczyce','Strzyżów','Brzozów','Ustrzyki Dolne',
+  'Lesko','Krynica-Zdrój','Muszyna','Piwniczna-Zdrój','Szczawnica','Krynica Morska','Hel','Władysławowo','Jastarnia','Łeba',
+  'Ustka','Darłowo','Kołobrzeg','Świdwin','Białogard','Wałcz','Złotów','Człopa','Drawsko Pomorskie','Choszczno',
+  'Myślibórz','Barlinek','Dębno','Chojna','Gryfino','Police','Goleniów','Nowogard','Łobez','Świerzno'
+];
+
+function populateCityDatalist(){
+  const el = document.getElementById('plCitiesList');
+  if(!el) return;
+  const unique = [...new Set(POLISH_CITIES)].sort((a,b)=>a.localeCompare(b, 'pl'));
+  el.innerHTML = unique.map(c=>`<option value="${escapeHtml(c)}">`).join('');
+}
 const DIET_LABELS = { wege: 'Wegetariańska', wegan: 'Wegańska', inne: 'Inne' };
 
 const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
@@ -740,11 +781,28 @@ function finishOnboarding(){
   document.getElementById('onboardOverlay').hidden = true;
 }
 
+let obStandaloneCity = false;
+
 function showOnboarding(){
+  obStandaloneCity = false;
+  document.getElementById('obSkip0').textContent = 'Pomiń';
   document.getElementById('obCityInput').value = '';
+  document.getElementById('obCityError').hidden = true;
   document.getElementById('obDietType').value = '';
   obPendingAllergens = [];
   renderObAllergenTags();
+  document.getElementById('obStep0').hidden = false;
+  document.getElementById('obStep1').hidden = true;
+  document.getElementById('obStep2').hidden = true;
+  document.getElementById('onboardOverlay').hidden = false;
+}
+
+function showCityOnly(){
+  obStandaloneCity = true;
+  document.getElementById('obSkip0').textContent = 'Anuluj';
+  const mine = me ? profiles[me] : null;
+  document.getElementById('obCityInput').value = mine && mine.city ? mine.city : '';
+  document.getElementById('obCityError').hidden = true;
   document.getElementById('obStep0').hidden = false;
   document.getElementById('obStep1').hidden = true;
   document.getElementById('obStep2').hidden = true;
@@ -875,11 +933,54 @@ document.getElementById('obAllergenInput').addEventListener('keydown', (e)=>{
   if(e.key==='Enter'){ e.preventDefault(); addObAllergenFromInput(); }
 });
 
-document.getElementById('obNext0').addEventListener('click', ()=>{
+document.getElementById('obNext0').addEventListener('click', async ()=>{
+  const btn = document.getElementById('obNext0');
+  const cityInput = document.getElementById('obCityInput');
+  const errorEl = document.getElementById('obCityError');
+  const city = cityInput.value.trim();
+  errorEl.hidden = true;
+
+  if(!city){
+    if(obStandaloneCity){
+      errorEl.textContent = 'Wpisz miasto.';
+      errorEl.hidden = false;
+      return;
+    }
+    document.getElementById('obStep0').hidden = true;
+    document.getElementById('obStep1').hidden = false;
+    return;
+  }
+
+  btn.disabled = true;
+  const geo = await geocode(city);
+  btn.disabled = false;
+  if(!geo){
+    errorEl.textContent = 'Nie rozpoznaliśmy tego miasta — sprawdź pisownię i spróbuj ponownie.';
+    errorEl.hidden = false;
+    return;
+  }
+
+  const existing = profiles[me] || {};
+  const profile = { person: me, diet: existing.diet || '', allergens: existing.allergens || [], city, lat: geo.lat, lon: geo.lon, updatedAt: Date.now() };
+  profiles[me] = profile;
+  renderDiets();
+  renderDistance();
+  try{ await setDoc(doc(firestore, 'profiles', me), profile); }
+  catch(err){ setStatus('Nie zapisano miasta na serwerze — spróbuj ponownie.'); }
+
+  if(obStandaloneCity){
+    finishOnboarding();
+    setStatus('Zapisano miasto.');
+    return;
+  }
   document.getElementById('obStep0').hidden = true;
   document.getElementById('obStep1').hidden = false;
 });
 document.getElementById('obSkip0').addEventListener('click', finishOnboarding);
+document.getElementById('changeCityBtn').addEventListener('click', ()=>{
+  if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
+  showCityOnly();
+});
 
 document.getElementById('obNext1').addEventListener('click', ()=>{
   document.getElementById('obStep1').hidden = true;
@@ -891,11 +992,10 @@ document.getElementById('obSkip2').addEventListener('click', finishOnboarding);
 
 document.getElementById('obFinish').addEventListener('click', async ()=>{
   addObAllergenFromInput();
-  const city = document.getElementById('obCityInput').value.trim();
   const diet = document.getElementById('obDietType').value;
   const allergens = [...obPendingAllergens];
-  const geo = city ? await geocode(city) : null;
-  const profile = { person: me, diet, allergens, city: city || null, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, updatedAt: Date.now() };
+  const existing = profiles[me] || {};
+  const profile = { person: me, diet, allergens, city: existing.city || null, lat: existing.lat ?? null, lon: existing.lon ?? null, updatedAt: Date.now() };
   profiles[me] = profile;
   renderDiets();
   renderDistance();
@@ -1464,6 +1564,7 @@ function init(){
 init();
 applySeasonTheme();
 updateGreeting();
+populateCityDatalist();
 setInterval(updateGreeting, 5*60*1000);
 
 function initInstallBanner(){
