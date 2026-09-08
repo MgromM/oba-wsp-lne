@@ -140,6 +140,12 @@
     padding:12px 16px; margin-bottom:16px;
   }
   .install-banner[hidden]{ display:none; }
+
+  .offline-pill{
+    background:var(--paper-raised); border:1px solid var(--danger); color:var(--ink);
+    border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:16px;
+  }
+  .offline-pill[hidden]{ display:none; }
   .install-banner p{ margin:0; flex:1; min-width:200px; font-size:14px; color:var(--ink); }
   .install-banner .install-btn{
     border:1px solid var(--both-line); background:var(--paper-raised); color:var(--ink);
@@ -509,6 +515,10 @@
     <h1>Termin na kolację</h1>
   </header>
 
+  <div class="offline-pill" id="offlinePill" hidden>
+    Offline — pokazujemy ostatnio zapisane dane. Zmiany zapiszą się, gdy wróci internet.
+  </div>
+
   <div class="whoami">
     <span>Jesteś:</span>
     <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
@@ -653,6 +663,7 @@ let editingTripId = null;
 let tripsLoaded = false;
 let profiles = {};
 let me = localStorage.getItem('kolacja_who') || null;
+let confirmedCountdownInterval = null;
 let viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0);
 
 function todayStr(){
@@ -989,8 +1000,6 @@ function exportConfirmedToIcs(){
   a.remove();
   URL.revokeObjectURL(url);
 }
-
-let confirmedCountdownInterval = null;
 
 function renderConfirmed(){
   const card = document.getElementById('confirmedCard');
@@ -1348,31 +1357,61 @@ document.getElementById('dietForm').addEventListener('submit', async (e)=>{
   catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
 });
 
+function loadCache(){
+  try{
+    const t = localStorage.getItem('kolacja_cache_trips');
+    if(t) trips = JSON.parse(t);
+    const p = localStorage.getItem('kolacja_cache_profiles');
+    if(p) profiles = JSON.parse(p);
+    const c = localStorage.getItem('kolacja_cache_confirmed');
+    if(c) confirmed = JSON.parse(c);
+  }catch(e){}
+}
+
+function saveCache(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
+}
+
+function setOffline(isOffline){
+  document.getElementById('offlinePill').hidden = !isOffline;
+}
+
 function init(){
+  loadCache();
   renderAll();
   onSnapshot(tripsCol, snap=>{
+    setOffline(false);
     trips = snap.docs.map(d=>d.data());
     tripsLoaded = true;
+    saveCache('kolacja_cache_trips', trips);
     if(editingTripId && !trips.some(t=>t.id===editingTripId)){
       setStatus('Edytowany termin został w międzyczasie usunięty.');
       cancelEditTrip();
     }
     renderAll();
   }, err=>{
+    setOffline(true);
     setStatus('Brak połączenia z bazą — sprawdź internet.');
   });
   onSnapshot(profilesCol, snap=>{
+    setOffline(false);
     profiles = {};
     snap.docs.forEach(d=>{ profiles[d.id] = d.data(); });
     profilesLoaded = true;
+    saveCache('kolacja_cache_profiles', profiles);
     renderDiets();
+    renderDistance();
     fillDietForm();
     if(pendingOnboardCheck){ pendingOnboardCheck = false; maybeShowOnboarding(); }
+  }, err=>{
+    setOffline(true);
   });
   let firstConfirmedSnapshot = true;
   let previousConfirmedDate = null;
   onSnapshot(confirmedDocRef, snap=>{
+    setOffline(false);
     confirmed = snap.exists() ? snap.data() : null;
+    saveCache('kolacja_cache_confirmed', confirmed);
     const newDate = confirmed ? confirmed.date : null;
     if(!firstConfirmedSnapshot && newDate && newDate !== previousConfirmedDate){
       playFireworks();
@@ -1382,6 +1421,8 @@ function init(){
     renderConfirmed();
     renderFreeList();
     renderCalendar();
+  }, err=>{
+    setOffline(true);
   });
 }
 init();
