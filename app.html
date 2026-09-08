@@ -196,6 +196,7 @@
     font-size:16px;
   }
   input:focus-visible, select:focus-visible, button:focus-visible, .who-btn:focus-visible{ outline:2px solid var(--michal); outline-offset:2px; }
+  button:disabled{ opacity:.4; cursor:not-allowed; }
   button.primary{
     border:none;
     background:var(--ink);
@@ -933,6 +934,7 @@ function renderConfirmed(){
       <button class="ics-btn" id="icsBtn">Dodaj do kalendarza</button>
       <button class="unconfirm-btn" id="unconfirmBtn" ${me ? '' : 'disabled'}>Odwołaj</button>
     </div>
+    ${me ? '' : '<div class="confirmed-meta">Wybierz kto jesteś, żeby móc odwołać.</div>'}
   `;
   document.getElementById('unconfirmBtn').addEventListener('click', unconfirmDate);
   document.getElementById('icsBtn').addEventListener('click', exportConfirmedToIcs);
