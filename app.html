@@ -691,12 +691,11 @@ function warsawHour(){
 
 function updateGreeting(){
   const el = document.getElementById('greeting');
-  if(!me){ el.hidden = true; return; }
   const hour = warsawHour();
   const isEvening = hour >= 18 || hour < 5;
   const word = isEvening ? 'Dobry wieczór' : 'Dzień dobry';
   const emoji = isEvening ? '🌙' : '☀️';
-  el.textContent = `${word}, ${PERSON_NAMES[me]} ${emoji}`;
+  el.textContent = `${word}, ${PERSON_NAMES.ona} ${emoji}`;
   el.hidden = false;
 }
 
@@ -1449,6 +1448,7 @@ function init(){
 }
 init();
 applySeasonTheme();
+updateGreeting();
 setInterval(updateGreeting, 5*60*1000);
 
 function initInstallBanner(){
