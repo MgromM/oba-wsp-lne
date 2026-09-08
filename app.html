@@ -119,6 +119,19 @@
   }
   .who-btn[data-active="true"][data-person="michal"]{ border-color:var(--michal); background:var(--michal-bg); color:var(--michal); }
   .who-btn[data-active="true"][data-person="ona"]{ border-color:var(--ona); background:var(--ona-bg); color:var(--ona); }
+  .city-pill{
+    border:1px dashed var(--line);
+    background:none;
+    color:var(--ink-soft);
+    padding:6px 12px;
+    border-radius:999px;
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .city-pill:hover{ color:var(--ink); border-color:var(--ink); }
+  .city-pill[hidden]{ display:none; }
 
   .grid{
     display:grid;
@@ -544,6 +557,7 @@
     <span>Jesteś:</span>
     <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
     <button class="who-btn" data-person="ona" id="btn-ona">Aga</button>
+    <button type="button" class="city-pill" id="changeCityBtn" hidden>📍 Ustaw miasto</button>
   </div>
 
   <div class="install-banner" id="installBanner" hidden>
@@ -622,7 +636,6 @@
           <button type="submit" class="primary" id="dietSubmitBtn">Zapisz</button>
         </form>
         <div class="diet-list" id="dietList"></div>
-        <button type="button" class="ics-btn" id="changeCityBtn" style="margin-top:10px;">Zmień swoje miasto</button>
       </details>
     </div>
 
@@ -747,6 +760,14 @@ function updateGreeting(){
   el.hidden = false;
 }
 
+function updateCityPill(){
+  const btn = document.getElementById('changeCityBtn');
+  if(!me){ btn.hidden = true; return; }
+  const mine = profiles[me];
+  btn.textContent = mine && mine.city ? `📍 ${mine.city}` : '📍 Ustaw miasto';
+  btn.hidden = false;
+}
+
 function setWho(person){
   if(editingTripId) cancelEditTrip();
   me = person;
@@ -754,6 +775,7 @@ function setWho(person){
   document.getElementById('btn-michal').setAttribute('data-active', person==='michal');
   document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
   updateGreeting();
+  updateCityPill();
   fillDietForm();
   maybeShowOnboarding();
   renderAll();
@@ -965,6 +987,7 @@ document.getElementById('obNext0').addEventListener('click', async ()=>{
   profiles[me] = profile;
   renderDiets();
   renderDistance();
+  updateCityPill();
   try{ await setDoc(doc(firestore, 'profiles', me), profile); }
   catch(err){ setStatus('Nie zapisano miasta na serwerze — spróbuj ponownie.'); }
 
@@ -1538,6 +1561,7 @@ function init(){
     renderDiets();
     renderDistance();
     fillDietForm();
+    updateCityPill();
     if(pendingOnboardCheck){ pendingOnboardCheck = false; maybeShowOnboarding(); }
   }, err=>{
     setOffline(true);
