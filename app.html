@@ -359,7 +359,10 @@
   .day-popover-row .dot{ margin-top:2px; }
   .day-popover-name{ font-weight:600; flex:none; }
   .day-popover-loc{ color:var(--ink-soft); }
-  .day-popover-distance{ color:var(--ink-soft); font-size:12px; }
+  .day-popover-distance-total{
+    margin-top:8px; padding-top:8px; border-top:1px solid var(--line);
+    font-weight:600; font-size:13.5px;
+  }
   .day-popover-close{
     position:absolute; top:6px; right:6px; border:none; background:transparent;
     color:var(--ink-soft); cursor:pointer; font-size:15px; padding:4px 7px; line-height:1;
@@ -599,7 +602,7 @@
           </div>
           <div>
             <label for="loc">Gdzie / co (opcjonalnie)</label>
-            <input type="text" id="loc" maxlength="60" placeholder="np. Kraków, wesele, delegacja...">
+            <input type="text" id="loc" maxlength="60" placeholder="np. Kraków, wesele, delegacja..." list="plCitiesList" autocomplete="off">
           </div>
           <div class="form-btn-row">
             <button type="submit" class="primary" id="submitBtn">Dodaj</button>
@@ -769,6 +772,15 @@ function updateCityPill(){
   btn.hidden = false;
 }
 
+function updateLocPlaceholder(){
+  const el = document.getElementById('loc');
+  if(!el) return;
+  const mine = me ? profiles[me] : null;
+  el.placeholder = mine && mine.city
+    ? `np. wesele, delegacja... (puste = ${mine.city})`
+    : 'np. Kraków, wesele, delegacja...';
+}
+
 function setWho(person){
   if(editingTripId) cancelEditTrip();
   me = person;
@@ -777,6 +789,7 @@ function setWho(person){
   document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
   updateGreeting();
   updateCityPill();
+  updateLocPlaceholder();
   fillDietForm();
   maybeShowOnboarding();
   renderAll();
@@ -872,7 +885,6 @@ function effectiveLocation(person){
   return effectiveLocationOnDate(person, todayStr());
 }
 
-function otherPersonOf(person){ return person === 'michal' ? 'ona' : 'michal'; }
 
 function renderDistance(){
   const card = document.getElementById('distanceCard');
@@ -994,6 +1006,7 @@ document.getElementById('obNext0').addEventListener('click', async ()=>{
   renderDiets();
   renderDistance();
   updateCityPill();
+  updateLocPlaceholder();
   try{ await setDoc(doc(firestore, 'profiles', me), profile); }
   catch(err){ setStatus('Nie zapisano miasta na serwerze — spróbuj ponownie.'); }
 
@@ -1334,8 +1347,8 @@ function buildMonthTable(monthDate){
       else if(busyO) cls += ' busy-ona';
       else if(ymd >= today) cls += ' free';
       if(confirmed && confirmed.date === ymd) cls += ' confirmed';
-      const clickable = (busyM || busyO) ? ' data-ymd="'+ymd+'" tabindex="0" role="button"' : '';
-      if(busyM || busyO) cls += ' clickable';
+      cls += ' clickable';
+      const clickable = ' data-ymd="'+ymd+'" tabindex="0" role="button"';
       return `<td><div class="${cls}"${clickable}><div class="num">${d}</div></div></td>`;
     }).join('') + '</tr>';
   }
@@ -1365,21 +1378,18 @@ function showDayPopover(dayEl){
   const d = parse(ymd);
   const rows = [];
   ['michal','ona'].forEach(p=>{
-    if(isBusy(p, ymd)){
-      const t = trips.find(tr=>tr.person===p && ymd>=tr.start && ymd<=tr.end);
-      const locText = t && t.loc ? escapeHtml(t.loc) : 'brak podanej lokalizacji';
-      let distanceText = '';
-      if(t && t.lat!=null && t.lon!=null){
-        const otherLoc = effectiveLocationOnDate(otherPersonOf(p), ymd);
-        if(otherLoc){
-          const km = haversineKm({lat:t.lat, lon:t.lon}, otherLoc);
-          distanceText = ` <span class="day-popover-distance">(${km} km stąd)</span>`;
-        }
-      }
-      rows.push(`<div class="day-popover-row"><span class="dot ${p}"></span><span class="day-popover-name">${PERSON_NAMES[p]}:</span><span class="day-popover-loc">${locText}${distanceText}</span></div>`);
-    }
+    const busy = isBusy(p, ymd);
+    const t = busy ? trips.find(tr=>tr.person===p && ymd>=tr.start && ymd<=tr.end) : null;
+    const loc = effectiveLocationOnDate(p, ymd);
+    const locText = t && t.loc ? escapeHtml(t.loc) : (loc ? escapeHtml(loc.label || '?') : 'brak podanego miasta');
+    rows.push(`<div class="day-popover-row"><span class="dot ${p}"></span><span class="day-popover-name">${PERSON_NAMES[p]}:</span><span class="day-popover-loc">${locText}</span></div>`);
   });
-  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">×</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}`;
+  const locMichal = effectiveLocationOnDate('michal', ymd);
+  const locOna = effectiveLocationOnDate('ona', ymd);
+  const distanceRow = (locMichal && locOna)
+    ? `<div class="day-popover-distance-total">${haversineKm(locMichal, locOna)} km od siebie</div>`
+    : '';
+  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">×</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${distanceRow}`;
   pop.hidden = false;
   const rect = dayEl.getBoundingClientRect();
   const popRect = pop.getBoundingClientRect();
@@ -1481,7 +1491,8 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
   const start = document.getElementById('start').value;
   const end = document.getElementById('end').value;
-  const loc = document.getElementById('loc').value.trim();
+  const rawLoc = document.getElementById('loc').value.trim();
+  const loc = rawLoc || (profiles[me] && profiles[me].city) || '';
   if(!start || !end){ setStatus('Podaj obie daty.'); return; }
   if(end < start){ setStatus('Data "do" musi być po dacie "od".'); return; }
 
@@ -1576,6 +1587,7 @@ function init(){
     renderDistance();
     fillDietForm();
     updateCityPill();
+    updateLocPlaceholder();
     if(pendingOnboardCheck){ pendingOnboardCheck = false; maybeShowOnboarding(); }
   }, err=>{
     setOffline(true);
