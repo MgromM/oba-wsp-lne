@@ -419,6 +419,18 @@
   .confirmed-countdown{ font-size:14px; color:var(--ink); font-weight:600; }
   .confirmed-weather{ font-size:14px; color:var(--ink); }
   .confirmed-weather[hidden]{ display:none; }
+  .city-combo{ position:relative; }
+  .city-suggestions{
+    position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:20;
+    max-height:220px; overflow-y:auto; margin:0; padding:6px; list-style:none;
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:10px;
+    box-shadow:var(--shadow);
+  }
+  .city-suggestions[hidden]{ display:none; }
+  .city-suggestions li{
+    padding:9px 10px; border-radius:7px; cursor:pointer; font-size:14px; color:var(--ink);
+  }
+  .city-suggestions li:hover, .city-suggestions li.active{ background:var(--both-bg); }
   .confirmed-actions{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:4px; }
   .ics-btn{
     border:none; background:none; padding:0; font:inherit; cursor:pointer;
@@ -564,7 +576,10 @@
       <div class="onboard-eyebrow">Ostatni krok</div>
       <h2>W jakim mieście jecie kolację?</h2>
       <p class="onboard-sub">Dzięki temu pokażemy pogodę na ten dzień.</p>
-      <input type="text" id="confirmCityInput" maxlength="60" placeholder="np. Kraków" list="plCitiesList" autocomplete="off">
+      <div class="city-combo">
+        <input type="text" id="confirmCityInput" maxlength="60" placeholder="Wpisz albo wybierz miasto" autocomplete="off">
+        <ul class="city-suggestions" id="confirmCitySuggestions" hidden></ul>
+      </div>
       <div class="onboard-error" id="confirmCityError" hidden></div>
       <div class="onboard-actions">
         <button type="button" class="onboard-skip" id="confirmCityCancel">Anuluj</button>
@@ -1200,7 +1215,32 @@ function openConfirmCityModal(ymd){
 function closeConfirmCityModal(){
   pendingConfirmYmd = null;
   document.getElementById('confirmCityOverlay').hidden = true;
+  document.getElementById('confirmCitySuggestions').hidden = true;
 }
+
+function renderCitySuggestions(query){
+  const list = document.getElementById('confirmCitySuggestions');
+  const q = query.trim().toLocaleLowerCase('pl');
+  const cities = [...new Set(POLISH_CITIES)].sort((a,b)=>a.localeCompare(b,'pl'));
+  const matches = (q ? cities.filter(c=>c.toLocaleLowerCase('pl').includes(q)) : cities).slice(0, 8);
+  if(matches.length === 0){ list.hidden = true; list.innerHTML = ''; return; }
+  list.innerHTML = matches.map(c=>`<li data-city="${c}">${c}</li>`).join('');
+  list.hidden = false;
+  list.querySelectorAll('li').forEach(li=>{
+    li.addEventListener('mousedown', (e)=>{
+      e.preventDefault();
+      document.getElementById('confirmCityInput').value = li.dataset.city;
+      list.hidden = true;
+    });
+  });
+}
+
+const confirmCityInputEl = document.getElementById('confirmCityInput');
+confirmCityInputEl.addEventListener('focus', ()=>renderCitySuggestions(confirmCityInputEl.value));
+confirmCityInputEl.addEventListener('input', ()=>renderCitySuggestions(confirmCityInputEl.value));
+confirmCityInputEl.addEventListener('blur', ()=>{
+  setTimeout(()=>{ document.getElementById('confirmCitySuggestions').hidden = true; }, 120);
+});
 
 function countdownText(d){
   const today = parse(todayStr());
