@@ -134,6 +134,23 @@
   .card + .card, .card + details, details + .card, details + details{ margin-top:12px; }
   @media (min-width:640px){ .card + .card, .card + details, details + .card, details + details{ margin-top:20px; } }
 
+  .install-banner{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--both-bg); border:1px solid var(--both-line); border-radius:16px;
+    padding:12px 16px; margin-bottom:16px;
+  }
+  .install-banner[hidden]{ display:none; }
+  .install-banner p{ margin:0; flex:1; min-width:200px; font-size:14px; color:var(--ink); }
+  .install-banner .install-btn{
+    border:1px solid var(--both-line); background:var(--paper-raised); color:var(--ink);
+    padding:8px 14px; border-radius:10px; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .install-banner .install-btn:hover{ background:var(--both-line); color:var(--paper-raised); }
+  .install-banner .install-dismiss{
+    border:none; background:none; color:var(--ink-soft); font:inherit; cursor:pointer; padding:4px;
+  }
+  .install-banner .install-dismiss:hover{ color:var(--ink); }
+
   .card h2{
     font-family:'Fraunces', Georgia, serif;
     font-size:18px;
@@ -355,6 +372,13 @@
   .confirmed-body{ display:flex; flex-direction:column; gap:4px; }
   .confirmed-date{ font-family:'Fraunces',serif; font-weight:600; font-size:22px; }
   .confirmed-meta{ color:var(--ink-soft); font-size:13px; }
+  .confirmed-countdown{ font-size:14px; color:var(--ink); font-weight:600; }
+  .confirmed-actions{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .ics-btn{
+    border:none; background:none; padding:0; font:inherit; cursor:pointer;
+    color:var(--ink-soft); text-decoration:underline; text-underline-offset:2px;
+  }
+  .ics-btn:hover{ color:var(--ink); }
   .unconfirm-btn{
     align-self:flex-start; margin-top:10px;
     border:1px solid var(--both-line); background:var(--paper-raised); color:var(--ink-soft);
@@ -478,6 +502,12 @@
     <span>Jesteś:</span>
     <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
     <button class="who-btn" data-person="ona" id="btn-ona">Aga</button>
+  </div>
+
+  <div class="install-banner" id="installBanner" hidden>
+    <p id="installBannerText">Dodaj tę apkę do ekranu głównego, żeby mieć ją pod ręką jak zwykłą aplikację.</p>
+    <button class="install-btn" id="installBtn" hidden>Zainstaluj</button>
+    <button class="install-dismiss" id="installDismiss" aria-label="Zamknij">✕</button>
   </div>
 
   <div class="grid">
@@ -837,21 +867,80 @@ function renderFreeList(){
   });
 }
 
+function countdownText(d){
+  const today = parse(todayStr());
+  const diffDays = Math.round((d - today) / 86400000);
+  if(diffDays === 0) return 'Dziś! 🎉';
+  if(diffDays === 1) return 'Jutro!';
+  if(diffDays < 0) return null;
+  return `Za ${diffDays} ${diffDays === 1 ? 'dzień' : 'dni'}`;
+}
+
+function buildIcs(confirmedDate){
+  const d = parse(confirmedDate.date);
+  const startsAt = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 19, 0, 0);
+  const endsAt = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 21, 0, 0);
+  const pad = n => String(n).padStart(2, '0');
+  const toIcsDate = dt => `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
+  const uid = `kolacja-${confirmedDate.date}@oba-wsp-lne`;
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//oba-wsp-lne//kolacja//PL',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${toIcsDate(new Date())}`,
+    `DTSTART:${toIcsDate(startsAt)}`,
+    `DTEND:${toIcsDate(endsAt)}`,
+    'SUMMARY:Kolacja',
+    `DESCRIPTION:Wybrane przez ${PERSON_NAMES[confirmedDate.confirmedBy] || confirmedDate.confirmedBy}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+}
+
+function exportConfirmedToIcs(){
+  if(!confirmed) return;
+  const blob = new Blob([buildIcs(confirmed)], {type: 'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kolacja-${confirmed.date}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+let confirmedCountdownInterval = null;
+
 function renderConfirmed(){
   const card = document.getElementById('confirmedCard');
   const body = document.getElementById('confirmedBody');
+  if(confirmedCountdownInterval){ clearInterval(confirmedCountdownInterval); confirmedCountdownInterval = null; }
   if(!confirmed){
     card.hidden = true;
     return;
   }
   card.hidden = false;
   const d = parse(confirmed.date);
+  const countdown = countdownText(d);
   body.innerHTML = `
     <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
     <div class="confirmed-meta">Wybrane przez ${PERSON_NAMES[confirmed.confirmedBy] || confirmed.confirmedBy}</div>
-    <button class="unconfirm-btn" id="unconfirmBtn" ${me ? '' : 'disabled'}>Odwołaj</button>
+    ${countdown ? `<div class="confirmed-countdown" id="confirmedCountdown">${countdown}</div>` : ''}
+    <div class="confirmed-actions">
+      <button class="ics-btn" id="icsBtn">Dodaj do kalendarza</button>
+      <button class="unconfirm-btn" id="unconfirmBtn" ${me ? '' : 'disabled'}>Odwołaj</button>
+    </div>
   `;
   document.getElementById('unconfirmBtn').addEventListener('click', unconfirmDate);
+  document.getElementById('icsBtn').addEventListener('click', exportConfirmedToIcs);
+  confirmedCountdownInterval = setInterval(()=>{
+    const el = document.getElementById('confirmedCountdown');
+    const text = countdownText(parse(confirmed.date));
+    if(el && text) el.textContent = text;
+  }, 60000);
 }
 
 function playFireworks(){
@@ -1210,6 +1299,56 @@ function init(){
   });
 }
 init();
+
+function initInstallBanner(){
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if(isStandalone) return;
+  if(localStorage.getItem('kolacja_install_dismissed')) return;
+
+  const banner = document.getElementById('installBanner');
+  const text = document.getElementById('installBannerText');
+  const installBtn = document.getElementById('installBtn');
+  const dismissBtn = document.getElementById('installDismiss');
+
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    banner.hidden = false;
+    installBtn.hidden = false;
+  });
+
+  if(isIos){
+    text.textContent = 'Dodaj tę apkę do ekranu głównego: stuknij ikonę Udostępnij, a potem „Dodaj do ekranu głównego”.';
+    banner.hidden = false;
+  }
+
+  installBtn.addEventListener('click', async ()=>{
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    banner.hidden = true;
+  });
+
+  dismissBtn.addEventListener('click', ()=>{
+    localStorage.setItem('kolacja_install_dismissed', '1');
+    banner.hidden = true;
+  });
+
+  window.addEventListener('appinstalled', ()=>{
+    banner.hidden = true;
+  });
+}
+initInstallBanner();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
