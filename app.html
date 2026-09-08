@@ -1464,16 +1464,24 @@ const WEATHER_CODE_ICONS = {
 async function fetchConfirmedWeather(){
   if(!confirmed || confirmed.lat==null || confirmed.lon==null) return null;
   try{
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${confirmed.lat}&longitude=${confirmed.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=Europe%2FWarsaw`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${confirmed.lat}&longitude=${confirmed.lon}&hourly=temperature_2m,precipitation_probability,weathercode&forecast_days=16&timezone=Europe%2FWarsaw`;
     const res = await fetch(url);
     const data = await res.json();
-    const idx = data?.daily?.time?.indexOf(confirmed.date);
-    if(idx == null || idx < 0) return null;
+    const times = data?.hourly?.time;
+    if(!times) return null;
+    const idxs = times
+      .map((t, i) => ({t, i}))
+      .filter(({t}) => t.startsWith(confirmed.date) && Number(t.slice(11,13)) >= 18 && Number(t.slice(11,13)) <= 23)
+      .map(({i}) => i);
+    if(idxs.length === 0) return null;
+    const temps = idxs.map(i => data.hourly.temperature_2m[i]);
+    const rains = idxs.map(i => data.hourly.precipitation_probability[i]);
+    const codes = idxs.map(i => data.hourly.weathercode[i]);
     return {
-      max: Math.round(data.daily.temperature_2m_max[idx]),
-      min: Math.round(data.daily.temperature_2m_min[idx]),
-      rain: data.daily.precipitation_probability_max[idx],
-      icon: WEATHER_CODE_ICONS[data.daily.weathercode[idx]] || '🌡️'
+      max: Math.round(Math.max(...temps)),
+      min: Math.round(Math.min(...temps)),
+      rain: Math.max(...rains),
+      icon: WEATHER_CODE_ICONS[Math.max(...codes)] || '🌡️'
     };
   }catch(e){ return null; }
 }
@@ -1484,7 +1492,7 @@ async function renderConfirmedWeather(){
   const weather = await fetchConfirmedWeather();
   if(!weather){ el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
-  el.innerHTML = `${weather.icon} ${weather.min}°–${weather.max}°C${weather.rain!=null ? ` · ${weather.rain}% szans na deszcz` : ''}${confirmed.city ? ` w ${confirmed.city}` : ''}`;
+  el.innerHTML = `${weather.icon} ${weather.min}°–${weather.max}°C wieczorem${weather.rain!=null ? ` · ${weather.rain}% szans na deszcz` : ''}${confirmed.city ? ` w ${confirmed.city}` : ''}`;
 }
 
 async function unconfirmDate(){
