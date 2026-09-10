@@ -58,6 +58,9 @@
   }
 
   *{box-sizing:border-box;}
+  .icon{ display:inline-block; flex:none; vertical-align:-3px; }
+  .icon svg{ display:block; width:100%; height:100%; }
+  button .icon{ pointer-events:none; }
   body{
     background:var(--paper);
     color:var(--ink);
@@ -171,7 +174,9 @@
   }
   .install-banner .install-btn:hover{ background:var(--both-line); color:var(--paper-raised); }
   .install-banner .install-dismiss{
-    border:none; background:none; color:var(--ink-soft); font:inherit; cursor:pointer; padding:4px;
+    border:none; background:none; color:var(--ink-soft); font:inherit; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    min-width:40px; min-height:40px; padding:4px;
   }
   .install-banner .install-dismiss:hover{ color:var(--ink); }
 
@@ -276,8 +281,11 @@
   .trip-loc{ color:var(--ink-soft); }
   .del, .edit{
     border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
-    font-size:18px; line-height:1; padding:8px 10px; border-radius:6px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    padding:10px; border-radius:6px; flex:none;
+    min-width:40px; min-height:40px;
   }
+  .del .icon, .edit .icon{ width:16px; height:16px; vertical-align:0; }
   .del:hover{ color:var(--danger); }
   .edit:hover{ color:var(--michal); }
   .empty{ color:var(--ink-soft); font-size:13.5px; padding:6px 2px; }
@@ -320,8 +328,10 @@
   }
   .tag-chip button{
     border:none; background:transparent; color:inherit; cursor:pointer;
-    font-size:15px; line-height:1; padding:2px 4px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:6px; margin:-4px; border-radius:50%;
   }
+  .tag-chip button .icon{ width:11px; height:11px; vertical-align:0; }
   .diet-allergen-tags{ display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
   .diet-allergen-tag{
     background:var(--ona-bg); color:var(--ona); font-size:12px; font-weight:600;
@@ -386,12 +396,23 @@
     font-weight:600; font-size:13.5px;
   }
   .day-popover-close{
-    position:absolute; top:6px; right:6px; border:none; background:transparent;
-    color:var(--ink-soft); cursor:pointer; font-size:15px; padding:4px 7px; line-height:1;
+    position:absolute; top:4px; right:4px; border:none; background:transparent;
+    color:var(--ink-soft); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    min-width:32px; min-height:32px;
   }
   .day .num{ font-weight:600; }
   .day.free{ background:var(--both-bg); border-color:var(--both-line); }
-  .day.free .num::after{ content:" 🍽"; font-size:11px; }
+  .day.free .num::after{
+    content:'';
+    display:inline-block;
+    width:10px; height:10px;
+    margin-left:3px;
+    vertical-align:-1px;
+    background-color:var(--both-line);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
   .day.busy-michal{ background:var(--michal-bg); }
   .day.busy-ona{ background:var(--ona-bg); }
   .day.busy-both{ background:linear-gradient(135deg, var(--michal-bg) 0 50%, var(--ona-bg) 50% 100%); }
@@ -620,13 +641,13 @@
     <span>Jesteś:</span>
     <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
     <button class="who-btn" data-person="ona" id="btn-ona">Aga</button>
-    <button type="button" class="city-pill" id="changeCityBtn" hidden>📍 Ustaw miasto</button>
+    <button type="button" class="city-pill" id="changeCityBtn" hidden><span class="icon" style="width:11px;height:11px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.686-7-11a7 7 0 0 1 14 0c0 5.314-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span> Ustaw miasto</button>
   </div>
 
   <div class="install-banner" id="installBanner" hidden>
     <p id="installBannerText">Dodaj tę apkę do ekranu głównego, żeby mieć ją pod ręką jak zwykłą aplikację.</p>
     <button class="install-btn" id="installBtn" hidden>Zainstaluj</button>
-    <button class="install-dismiss" id="installDismiss" aria-label="Zamknij">✕</button>
+    <button class="install-dismiss" id="installDismiss" aria-label="Zamknij"><span class="icon" style="width:13px;height:13px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
   </div>
 
   <div class="grid">
@@ -786,6 +807,10 @@ function populateCityDatalist(){
 }
 const DIET_LABELS = { wege: 'Wegetariańska', wegan: 'Wegańska', inne: 'Inne' };
 
+const ICON_PIN = `<span class="icon" style="width:11px;height:11px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.686-7-11a7 7 0 0 1 14 0c0 5.314-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>`;
+const ICON_XMARK = `<span class="icon" style="width:13px;height:13px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>`;
+const ICON_PENCIL = `<span class="icon" style="width:13px;height:13px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>`;
+
 const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
 const MONTH_NAMES = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
 
@@ -828,7 +853,7 @@ function updateCityPill(){
   const btn = document.getElementById('changeCityBtn');
   if(!me){ btn.hidden = true; return; }
   const mine = profiles[me];
-  btn.textContent = mine && mine.city ? `📍 ${mine.city}` : '📍 Ustaw miasto';
+  btn.innerHTML = mine && mine.city ? `${ICON_PIN} ${escapeHtml(mine.city)}` : `${ICON_PIN} Ustaw miasto`;
   btn.hidden = false;
 }
 
@@ -1002,7 +1027,7 @@ function applySeasonTheme(){
 function renderAllergenTags(){
   const el = document.getElementById('allergenTags');
   el.innerHTML = pendingAllergens.map((a,i)=>`
-    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">×</button></span>
+    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">${ICON_XMARK}</button></span>
   `).join('');
   el.querySelectorAll('button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -1032,7 +1057,7 @@ let obPendingAllergens = [];
 function renderObAllergenTags(){
   const el = document.getElementById('obAllergenTags');
   el.innerHTML = obPendingAllergens.map((a,i)=>`
-    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">×</button></span>
+    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">${ICON_XMARK}</button></span>
   `).join('');
   el.querySelectorAll('button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -1153,8 +1178,8 @@ function renderTripList(){
         <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}</div>
         ${t.loc ? `<div class="trip-loc">${escapeHtml(t.loc)}</div>` : ''}
       </div>
-      ${t.person===me ? `<button class="edit" data-id="${t.id}" aria-label="Edytuj">✎</button>` : ''}
-      <button class="del" data-id="${t.id}" aria-label="Usuń" ${me ? '' : 'disabled title="wybierz kim jesteś"'}>×</button>
+      ${t.person===me ? `<button class="edit" data-id="${t.id}" aria-label="Edytuj">${ICON_PENCIL}</button>` : ''}
+      <button class="del" data-id="${t.id}" aria-label="Usuń" ${me ? '' : 'disabled title="wybierz kim jesteś"'}>${ICON_XMARK}</button>
     </div>
   `).join('');
   list.querySelectorAll('.del').forEach(btn=>{
@@ -1585,7 +1610,7 @@ function showDayPopover(dayEl){
   const distanceRow = (locMichal && locOna)
     ? `<div class="day-popover-distance-total">${haversineKm(locMichal, locOna)} km od siebie</div>`
     : '';
-  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">×</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${distanceRow}`;
+  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">${ICON_XMARK}</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${distanceRow}`;
   pop.hidden = false;
   const rect = dayEl.getBoundingClientRect();
   const popRect = pop.getBoundingClientRect();
