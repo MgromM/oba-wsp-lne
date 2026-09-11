@@ -36,13 +36,19 @@
   }
   .who-btn[data-active="true"]{ border-color:var(--accent); background:var(--accent-bg); color:var(--accent); }
   label{ font-family:'Fraunces',Georgia,serif; font-size:16px; font-weight:600; display:block; margin-bottom:10px; }
-  .scale{ display:flex; gap:8px; flex-wrap:wrap; }
-  .scale button{
-    border:1px solid var(--line); background:var(--paper); color:var(--ink);
-    font-size:22px; min-width:52px; min-height:52px; border-radius:12px; cursor:pointer;
+  .stars{ display:flex; gap:4px; }
+  .stars button{
+    border:none; background:none; color:var(--line); font-size:38px; line-height:1;
+    padding:2px; cursor:pointer; font-family:inherit;
+  }
+  .stars button[data-lit="true"]{ color:#f4c150; }
+  .toggle2{ display:flex; gap:8px; }
+  .toggle2 button{
+    flex:1; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    font-size:16px; font-weight:600; min-height:52px; border-radius:12px; cursor:pointer;
     font-family:inherit;
   }
-  .scale button[data-active="true"]{ border-color:var(--accent); background:var(--accent-bg); }
+  .toggle2 button[data-active="true"]{ border-color:var(--accent); background:var(--accent-bg); color:var(--accent); }
   textarea{
     width:100%; min-height:80px; padding:11px 10px; border-radius:9px; border:1px solid var(--line);
     background:var(--paper); color:var(--ink); font-family:inherit; font-size:15px; resize:vertical;
@@ -72,23 +78,20 @@
 
   <div class="formArea" id="formArea">
     <div class="card">
-      <label>Jak jedzenie?</label>
-      <div class="scale" id="foodScale">
-        <button type="button" data-v="1">😖</button>
-        <button type="button" data-v="2">🙁</button>
-        <button type="button" data-v="3">😐</button>
-        <button type="button" data-v="4">🙂</button>
-        <button type="button" data-v="5">😍</button>
+      <label>Jak oceniasz wieczór?</label>
+      <div class="stars" id="starScale">
+        <button type="button" data-v="1">★</button>
+        <button type="button" data-v="2">★</button>
+        <button type="button" data-v="3">★</button>
+        <button type="button" data-v="4">★</button>
+        <button type="button" data-v="5">★</button>
       </div>
     </div>
     <div class="card">
-      <label>Jak wieczór ogólnie?</label>
-      <div class="scale" id="eveningScale">
-        <button type="button" data-v="1">😴</button>
-        <button type="button" data-v="2">🙁</button>
-        <button type="button" data-v="3">😐</button>
-        <button type="button" data-v="4">😊</button>
-        <button type="button" data-v="5">🥰</button>
+      <label>Wracamy tam?</label>
+      <div class="toggle2" id="returnToggle">
+        <button type="button" data-v="yes">Tak 🔁</button>
+        <button type="button" data-v="no">Nie</button>
       </div>
     </div>
     <div class="card">
@@ -126,8 +129,8 @@ const dinnerDate = params.get('date') || new Intl.DateTimeFormat('en-CA', { time
   .format(new Date(Date.now() - 86400000));
 
 let me = localStorage.getItem('kolacja_who') || null;
-let foodRating = null;
-let eveningRating = null;
+let rating = null;
+let wouldReturn = null;
 
 function setWho(person){
   me = person;
@@ -140,21 +143,29 @@ document.getElementById('btn-michal').addEventListener('click', ()=>setWho('mich
 document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
 if(me) setWho(me);
 
-function wireScale(id, onPick){
-  const el = document.getElementById(id);
-  el.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      el.querySelectorAll('button').forEach(b=>b.setAttribute('data-active', 'false'));
-      btn.setAttribute('data-active', 'true');
-      onPick(Number(btn.dataset.v));
-    });
+function paintStars(n){
+  document.querySelectorAll('#starScale button').forEach(btn=>{
+    btn.setAttribute('data-lit', Number(btn.dataset.v) <= n ? 'true' : 'false');
   });
 }
-wireScale('foodScale', v=>{ foodRating = v; updateSubmitState(); });
-wireScale('eveningScale', v=>{ eveningRating = v; updateSubmitState(); });
+const starEl = document.getElementById('starScale');
+starEl.querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('mouseenter', ()=>paintStars(Number(btn.dataset.v)));
+  btn.addEventListener('click', ()=>{ rating = Number(btn.dataset.v); paintStars(rating); updateSubmitState(); });
+});
+starEl.addEventListener('mouseleave', ()=>paintStars(rating || 0));
+
+document.getElementById('returnToggle').querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#returnToggle button').forEach(b=>b.setAttribute('data-active', 'false'));
+    btn.setAttribute('data-active', 'true');
+    wouldReturn = btn.dataset.v;
+    updateSubmitState();
+  });
+});
 
 function updateSubmitState(){
-  document.getElementById('submitBtn').disabled = !(me && foodRating && eveningRating);
+  document.getElementById('submitBtn').disabled = !(me && rating && wouldReturn);
 }
 
 document.getElementById('submitBtn').addEventListener('click', async ()=>{
@@ -165,7 +176,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const docId = `${dinnerDate}_${me}`;
   try{
     await setDoc(doc(firestore, 'survey_responses', docId), {
-      date: dinnerDate, person: me, foodRating, eveningRating, comment,
+      date: dinnerDate, person: me, rating, wouldReturn, comment,
       submittedAt: Date.now()
     });
     document.getElementById('formArea').hidden = true;
