@@ -560,17 +560,6 @@
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal){
-    await OneSignal.init({
-      appId: "0e179f57-c4e6-4d10-998e-ce35527ffc0b",
-      serviceWorkerPath: "sw.js",
-      serviceWorkerParam: { scope: "/" }
-    });
-  });
-</script>
 </head>
 <body>
 <div class="onboard-overlay" id="onboardOverlay" hidden>
@@ -890,28 +879,7 @@ function setWho(person){
   updateLocPlaceholder();
   fillDietForm();
   maybeShowOnboarding();
-  identifyPushUser(person);
   renderAll();
-}
-
-// Links this browser to "michal" or "ona" in OneSignal (External ID + tag), so the
-// other person's browser can target a push straight at them via the REST API.
-// login()/addTag() only need to happen once per device+person, not on every single
-// page load — repeating them adds a burst of network calls right at startup,
-// competing with Firestore/weather/map requests for the same connection.
-function identifyPushUser(person){
-  if(localStorage.getItem('kolacja_push_identified_' + person)) return;
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal){
-    try{
-      await OneSignal.login(person);
-      await OneSignal.User.addTag('person', person);
-      if(OneSignal.Notifications.permission !== true && OneSignal.Notifications.permission !== 'granted'){
-        await OneSignal.Notifications.requestPermission();
-      }
-      localStorage.setItem('kolacja_push_identified_' + person, '1');
-    }catch(e){}
-  });
 }
 
 function onboardKey(person){ return 'kolacja_onboarded_' + person; }
@@ -1525,21 +1493,6 @@ function playFireworks(){
 
 function otherPerson(person){ return person === 'michal' ? 'ona' : 'michal'; }
 
-// Set this to the *.workers.dev URL after deploying cloudflare-worker/send-push.js —
-// that worker holds the OneSignal REST API Key so it never ships to the browser.
-const PUSH_ENDPOINT = 'https://kolacja-send-push.michalgromjr.workers.dev';
-
-async function sendPushToOther(fromPerson, title, message){
-  if(!PUSH_ENDPOINT) return;
-  try{
-    await fetch(PUSH_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ toExternalId: otherPerson(fromPerson), title, message })
-    });
-  }catch(e){ /* push is best-effort; the in-app state is already saved */ }
-}
-
 async function proposeDate(ymd, city, lat, lon){
   if(!me) return;
   if(isBusy('michal', ymd) || isBusy('ona', ymd)){
@@ -1553,7 +1506,6 @@ async function proposeDate(ymd, city, lat, lon){
   renderCalendar();
   try{ await setDoc(confirmedDocRef, confirmed); }
   catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); return; }
-  sendPushToOther(me, 'Propozycja kolacji 🍽', `${PERSON_NAMES[me]} proponuje ${fmt(parse(ymd))}${city ? ` w ${city}` : ''} — otwórz appkę, żeby zaakceptować.`);
 }
 
 async function acceptProposal(){
@@ -1565,22 +1517,16 @@ async function acceptProposal(){
   playFireworks();
   try{ await setDoc(confirmedDocRef, confirmed); }
   catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); return; }
-  sendPushToOther(me, 'Kolacja potwierdzona! 🎉', `${PERSON_NAMES[me]} zaakceptował(a) termin ${fmt(parse(confirmed.date))}.`);
 }
 
 async function declineProposal(){
   if(!confirmed) return;
-  const proposer = confirmed.proposedBy;
-  const declinedDate = confirmed.date;
   confirmed = null;
   renderConfirmed();
   renderFreeList();
   renderCalendar();
   try{ await deleteDoc(confirmedDocRef); }
   catch(err){ setStatus('Nie udało się odrzucić — spróbuj ponownie.'); return; }
-  if(me && proposer && proposer !== me){
-    sendPushToOther(me, 'Propozycja odrzucona', `${PERSON_NAMES[me]} nie może ${fmt(parse(declinedDate))} — zaproponuj inny dzień.`);
-  }
 }
 
 document.getElementById('confirmCityCancel').addEventListener('click', closeConfirmCityModal);

@@ -1,3 +1,0 @@
-name = "kolacja-send-push"
-main = "send-push.js"
-compatibility_date = "2024-01-01"
