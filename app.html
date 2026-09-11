@@ -559,27 +559,41 @@
   .distance-map[hidden]{ display:none; }
 
   .week-strip-card{ margin-bottom:16px; }
-  .lanes{ display:flex; flex-direction:column; gap:8px; }
-  .lane-label{
-    display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:700;
-    color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;
+  .week-grid{
+    display:grid; grid-template-columns: 86px repeat(7, 1fr);
+    gap:6px; align-items:center;
   }
-  .lane-label .avatar{
-    width:16px; height:16px; border-radius:50%; font-size:9px; font-weight:800;
+  .week-grid .head{
+    font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase;
+    letter-spacing:.03em; text-align:center; padding-bottom:2px;
+  }
+  .week-grid .head.today{ color:var(--ink); }
+  .week-grid .row-label{
+    display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:var(--ink-soft);
+  }
+  .week-grid .row-label .avatar{
+    width:20px; height:20px; border-radius:50%; font-size:10.5px; font-weight:800;
     display:flex; align-items:center; justify-content:center; color:#fff; flex:none;
   }
-  .lane{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
-  .lane.merged{ margin-top:2px; }
-  .lane .cell{
-    height:28px; border-radius:7px; font-size:10.5px; font-weight:700;
-    display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px;
-    color:var(--ink-soft); background:var(--line); opacity:.55;
+  .week-grid .row-label .avatar.both-avatar{
+    background:var(--both-line); color:#4a3d1a; font-size:13px;
   }
-  .lane .cell.free{ background:var(--michal-bg); color:var(--michal); opacity:1; }
-  .lane .cell.ona-free{ background:var(--ona-bg); color:var(--ona); opacity:1; }
-  .lane .cell.both{ background:var(--both-bg); border:1.5px solid var(--both-line); color:var(--ink); opacity:1; }
-  .lane .cell.today{ box-shadow:inset 0 0 0 2px var(--ink); }
-  .merge-caption{ font-size:12px; color:var(--ink-soft); margin-top:10px; }
+  .week-grid .cell{
+    height:36px; border-radius:9px; background:var(--line); opacity:.5;
+    position:relative;
+  }
+  .week-grid .cell.free{ background:var(--michal-bg); opacity:1; }
+  .week-grid .cell.ona-free{ background:var(--ona-bg); opacity:1; }
+  .week-grid .cell.both{ background:var(--both-bg); border:1.5px solid var(--both-line); opacity:1; }
+  .week-grid .cell.both::after{
+    content:'';
+    position:absolute; inset:0; margin:auto; width:14px; height:14px;
+    background-color:var(--both-line);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  .week-grid .cell.today{ box-shadow: inset 0 0 0 2px var(--ink); }
+  .merge-caption{ font-size:12px; color:var(--ink-soft); margin-top:12px; }
   .merge-caption b{ color:var(--ink); font-weight:700; }
 
   .planner-hero{
@@ -634,7 +648,6 @@
 <div class="onboard-overlay" id="onboardOverlay" hidden>
   <div class="onboard-card">
     <div class="onboard-step" id="obStep0">
-      <div class="onboard-eyebrow">Krok 1 z 3</div>
       <h2>Zanim zaczniesz — skąd jesteś?</h2>
       <p class="onboard-sub">To pomoże policzyć, ile dzieli was kilometrów.</p>
       <input type="text" id="obCityInput" maxlength="60" placeholder="np. Warszawa" list="plCitiesList" autocomplete="off">
@@ -647,7 +660,6 @@
     </div>
 
     <div class="onboard-step" id="obStep1" hidden>
-      <div class="onboard-eyebrow">Krok 2 z 3</div>
       <h2>Zanim zaczniesz — jaka dieta?</h2>
       <p class="onboard-sub">To pomoże wybrać restaurację, w której oboje coś zjecie.</p>
       <select id="obDietType">
@@ -663,7 +675,6 @@
     </div>
 
     <div class="onboard-step" id="obStep2" hidden>
-      <div class="onboard-eyebrow">Krok 3 z 3</div>
       <h2>Alergeny albo czego nie jesz</h2>
       <p class="onboard-sub">Dodaj tyle, ile potrzebujesz — jeden na raz.</p>
       <div class="tag-input-row">
@@ -684,7 +695,7 @@
     <div class="onboard-step">
       <div class="onboard-eyebrow">Ostatni krok</div>
       <h2>W jakim mieście proponujesz kolację?</h2>
-      <p class="onboard-sub">Druga osoba dostanie powiadomienie i będzie mogła zaakceptować ten termin.</p>
+      <p class="onboard-sub">Druga osoba zobaczy tę propozycję w appce i będzie mogła ją zaakceptować.</p>
       <div class="city-combo">
         <input type="text" id="confirmCityInput" maxlength="60" placeholder="Wpisz albo wybierz miasto" autocomplete="off">
         <ul class="city-suggestions" id="confirmCitySuggestions" hidden></ul>
@@ -723,7 +734,7 @@
 
   <div class="card week-strip-card" id="weekStripCard">
     <h2>Ten tydzień</h2>
-    <div class="lanes" id="weekStrip"></div>
+    <div class="week-grid" id="weekStrip"></div>
     <div class="merge-caption" id="weekStripCaption"></div>
   </div>
 
@@ -906,6 +917,7 @@ const DIET_LABELS = { wege: 'Wegetariańska', wegan: 'Wegańska', inne: 'Inne' }
 const ICON_PIN = `<span class="icon" style="width:11px;height:11px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.686-7-11a7 7 0 0 1 14 0c0 5.314-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>`;
 const ICON_XMARK = `<span class="icon" style="width:13px;height:13px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>`;
 const ICON_PENCIL = `<span class="icon" style="width:13px;height:13px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>`;
+const ICON_UTENSILS = `<span class="icon" style="width:12px;height:12px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></span>`;
 
 const DAY_NAMES = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
 const MONTH_NAMES = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
@@ -1392,10 +1404,11 @@ function renderWeekStrip(){
     days.push(d);
   }
   const dayLabel = d => DAY_NAMES[(d.getDay() + 6) % 7];
+  const headRow = days.map(d=>`<div class="head ${dateStr(d) === today ? 'today' : ''}">${dayLabel(d)}</div>`).join('');
   const personRow = (person, freeClass) => days.map(d=>{
     const ymd = dateStr(d);
     const cls = [isBusy(person, ymd) ? '' : freeClass, ymd === today ? 'today' : ''].filter(Boolean).join(' ');
-    return `<div class="cell ${cls}">${dayLabel(d)}</div>`;
+    return `<div class="cell ${cls}"></div>`;
   }).join('');
   const mergedRow = days.map(d=>{
     const ymd = dateStr(d);
@@ -1404,15 +1417,10 @@ function renderWeekStrip(){
     return `<div class="cell ${cls}"></div>`;
   }).join('');
   document.getElementById('weekStrip').innerHTML = `
-    <div>
-      <div class="lane-label"><span class="avatar" style="background:var(--michal)">M</span>${PERSON_NAMES.michal}</div>
-      <div class="lane">${personRow('michal', 'free')}</div>
-    </div>
-    <div>
-      <div class="lane-label"><span class="avatar" style="background:var(--ona)">A</span>${PERSON_NAMES.ona}</div>
-      <div class="lane">${personRow('ona', 'ona-free')}</div>
-    </div>
-    <div class="lane merged">${mergedRow}</div>
+    <div></div>${headRow}
+    <div class="row-label"><span class="avatar" style="background:var(--michal)">M</span>${PERSON_NAMES.michal}</div>${personRow('michal', 'free')}
+    <div class="row-label"><span class="avatar" style="background:var(--ona)">A</span>${PERSON_NAMES.ona}</div>${personRow('ona', 'ona-free')}
+    <div class="row-label"><span class="avatar both-avatar">${ICON_UTENSILS}</span>Oboje</div>${mergedRow}
   `;
   const freeDayNames = days
     .filter(d=>{ const ymd = dateStr(d); return !isBusy('michal', ymd) && !isBusy('ona', ymd); })
