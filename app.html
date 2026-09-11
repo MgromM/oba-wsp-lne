@@ -896,7 +896,11 @@ function setWho(person){
 
 // Links this browser to "michal" or "ona" in OneSignal (External ID + tag), so the
 // other person's browser can target a push straight at them via the REST API.
+// login()/addTag() only need to happen once per device+person, not on every single
+// page load — repeating them adds a burst of network calls right at startup,
+// competing with Firestore/weather/map requests for the same connection.
 function identifyPushUser(person){
+  if(localStorage.getItem('kolacja_push_identified_' + person)) return;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal){
     try{
@@ -905,6 +909,7 @@ function identifyPushUser(person){
       if(OneSignal.Notifications.permission !== true && OneSignal.Notifications.permission !== 'granted'){
         await OneSignal.Notifications.requestPermission();
       }
+      localStorage.setItem('kolacja_push_identified_' + person, '1');
     }catch(e){}
   });
 }
