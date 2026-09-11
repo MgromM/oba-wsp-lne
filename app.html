@@ -557,6 +557,75 @@
   }
   .distance-map{ height:200px; border-radius:12px; margin-top:12px; overflow:hidden; isolation:isolate; }
   .distance-map[hidden]{ display:none; }
+
+  .week-strip-card{ margin-bottom:16px; }
+  .lanes{ display:flex; flex-direction:column; gap:8px; }
+  .lane-label{
+    display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:700;
+    color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;
+  }
+  .lane-label .avatar{
+    width:16px; height:16px; border-radius:50%; font-size:9px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; color:#fff; flex:none;
+  }
+  .lane{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .lane.merged{ margin-top:2px; }
+  .lane .cell{
+    height:28px; border-radius:7px; font-size:10.5px; font-weight:700;
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px;
+    color:var(--ink-soft); background:var(--line); opacity:.55;
+  }
+  .lane .cell.free{ background:var(--michal-bg); color:var(--michal); opacity:1; }
+  .lane .cell.ona-free{ background:var(--ona-bg); color:var(--ona); opacity:1; }
+  .lane .cell.both{ background:var(--both-bg); border:1.5px solid var(--both-line); color:var(--ink); opacity:1; }
+  .lane .cell.today{ box-shadow:inset 0 0 0 2px var(--ink); }
+  .merge-caption{ font-size:12px; color:var(--ink-soft); margin-top:10px; }
+  .merge-caption b{ color:var(--ink); font-weight:700; }
+
+  .planner-hero{
+    background:var(--both-bg); border:1px solid var(--both-line); border-radius:16px;
+    margin-bottom:16px; display:flex; flex-direction:column; gap:6px;
+  }
+  .planner-hero .planner-eyebrow{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#8a6a10; }
+  .planner-hero .planner-date{ font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:22px; }
+  .planner-hero .planner-meta{ font-size:13px; color:#6b5a20; }
+  .planner-btn{
+    margin-top:6px; border:none; background:var(--ink); color:var(--paper);
+    padding:12px 18px; border-radius:11px; font-family:inherit; font-weight:700; font-size:14.5px;
+    cursor:pointer; align-self:flex-start;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .planner-btn{ background:var(--michal); color:#12211c; }
+    :root:not([data-theme="light"]) .planner-hero .planner-eyebrow, :root:not([data-theme="light"]) .planner-hero .planner-meta{ color:var(--ink-soft); }
+  }
+  :root[data-theme="dark"] .planner-btn{ background:var(--michal); color:#12211c; }
+  :root[data-theme="dark"] .planner-hero .planner-eyebrow, :root[data-theme="dark"] .planner-hero .planner-meta{ color:var(--ink-soft); }
+
+  .idea-list{ display:flex; flex-direction:column; gap:2px; }
+  .idea-row{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--line); }
+  .idea-row:last-child{ border-bottom:none; }
+  .idea-check{
+    width:22px; height:22px; border-radius:50%; border:2px solid var(--line); flex:none;
+    background:none; cursor:pointer; padding:0; position:relative;
+  }
+  .idea-check[data-done="true"]{ background:var(--michal); border-color:var(--michal); }
+  .idea-check[data-done="true"]::after{ content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:800; }
+  .idea-name{ flex:1; min-width:0; font-weight:600; font-size:14px; overflow-wrap:anywhere; }
+  .idea-name[data-done="true"]{ text-decoration:line-through; color:var(--ink-soft); font-weight:500; }
+  .idea-added{ font-size:11.5px; color:var(--ink-soft); flex:none; }
+  .idea-del{ border:none; background:transparent; color:var(--ink-soft); cursor:pointer; font-size:18px; line-height:1; padding:8px 8px; flex:none; }
+  .idea-del:hover{ color:var(--danger); }
+  .idea-add{ display:flex; gap:8px; margin-top:12px; }
+  .idea-add input{
+    flex:1; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    border-radius:9px; padding:10px 11px; font:inherit; font-size:15px;
+  }
+  .idea-add button{
+    border:none; background:var(--ink); color:var(--paper); border-radius:9px;
+    padding:0 16px; font:inherit; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .idea-add button{ background:var(--michal); color:#12211c; } }
+  :root[data-theme="dark"] .idea-add button{ background:var(--michal); color:#12211c; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
@@ -652,13 +721,26 @@
     <button class="install-dismiss" id="installDismiss" aria-label="Zamknij"><span class="icon" style="width:13px;height:13px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
   </div>
 
+  <div class="card week-strip-card" id="weekStripCard">
+    <h2>Ten tydzień</h2>
+    <div class="lanes" id="weekStrip"></div>
+    <div class="merge-caption" id="weekStripCaption"></div>
+  </div>
+
+  <div class="card confirmed-card" id="confirmedCard" hidden>
+    <h2>Zaplanowana kolacja</h2>
+    <div class="confirmed-body" id="confirmedBody"></div>
+  </div>
+
+  <div class="card planner-hero" id="plannerHero" hidden>
+    <div class="planner-eyebrow">Najbliższy wolny wieczór</div>
+    <div class="planner-date" id="plannerHeroDate"></div>
+    <div class="planner-meta" id="plannerHeroMeta"></div>
+    <button type="button" class="planner-btn" id="plannerHeroBtn">Zaproponuj ten dzień →</button>
+  </div>
+
   <div class="grid">
     <div>
-      <div class="card confirmed-card" id="confirmedCard" hidden>
-        <h2>Zaplanowana kolacja</h2>
-        <div class="confirmed-body" id="confirmedBody"></div>
-      </div>
-
       <div class="card distance-card" id="distanceCard" hidden>
         <h2>Odległość między wami</h2>
         <div id="distanceBody"></div>
@@ -668,6 +750,15 @@
       <div class="card">
         <h2>Najbliższe wolne wieczory (oboje)</h2>
         <div class="free-list" id="freeList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Do wypróbowania razem</h2>
+        <div class="idea-list" id="ideaList"></div>
+        <div class="idea-add">
+          <input type="text" id="ideaInput" maxlength="80" placeholder="np. winiarnia z tarasem...">
+          <button type="button" id="ideaAddBtn">Dodaj</button>
+        </div>
       </div>
 
       <details class="card details-card" id="tripFormDetails">
@@ -769,7 +860,10 @@ const firestore = getFirestore(fbApp);
 const tripsCol = collection(firestore, 'trips');
 const profilesCol = collection(firestore, 'profiles');
 const confirmedDocRef = doc(firestore, 'meta', 'confirmed_date');
+const ideasCol = collection(firestore, 'place_ideas');
 let confirmed = null;
+let ideas = [];
+let ideasLoaded = false;
 const PERSON_NAMES = { michal: 'Michał', ona: 'Aga' };
 
 const POLISH_CITIES = [
@@ -1224,19 +1318,24 @@ function cancelEditTrip(){
 
 const FREE_SEARCH_DAYS = 365;
 
+function nextFreeDates(limit){
+  const out = [];
+  let d = parse(todayStr());
+  for(let i=0; i<FREE_SEARCH_DAYS && out.length<limit; i++){
+    const ymd = dateStr(d);
+    if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+
 function renderFreeList(){
   const el = document.getElementById('freeList');
   if(!tripsLoaded){
     el.innerHTML = '<div class="empty">Wczytywanie…</div>';
     return;
   }
-  const out = [];
-  let d = parse(todayStr());
-  for(let i=0; i<FREE_SEARCH_DAYS && out.length<6; i++){
-    const ymd = dateStr(d);
-    if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
-    d.setDate(d.getDate()+1);
-  }
+  const out = nextFreeDates(6);
   if(out.length===0){
     el.innerHTML = '<div class="empty">Brak wspólnych wolnych dni w najbliższym roku.</div>';
     return;
@@ -1256,6 +1355,127 @@ function renderFreeList(){
     btn.addEventListener('click', ()=>openConfirmCityModal(btn.dataset.ymd));
   });
 }
+
+function renderPlannerHero(){
+  const hero = document.getElementById('plannerHero');
+  if(!tripsLoaded || confirmed){ hero.hidden = true; return; }
+  const next = nextFreeDates(1)[0];
+  if(!next){ hero.hidden = true; return; }
+  const ymd = dateStr(next);
+  hero.hidden = false;
+  document.getElementById('plannerHeroDate').textContent =
+    `${next.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(next)}`;
+  const diffDays = Math.round((next - parse(todayStr())) / 86400000);
+  document.getElementById('plannerHeroMeta').textContent = diffDays === 0
+    ? 'Dziś jesteście oboje wolni.'
+    : `Za ${diffDays} ${diffDays === 1 ? 'dzień' : 'dni'} jesteście oboje wolni.`;
+  const btn = document.getElementById('plannerHeroBtn');
+  btn.disabled = !me;
+  btn.onclick = ()=>openConfirmCityModal(ymd);
+}
+
+function startOfWeekDate(ymd){
+  const d = parse(ymd);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  return d;
+}
+
+function renderWeekStrip(){
+  if(!tripsLoaded) return;
+  const today = todayStr();
+  const start = startOfWeekDate(today);
+  const days = [];
+  for(let i=0; i<7; i++){
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+  const dayLabel = d => DAY_NAMES[(d.getDay() + 6) % 7];
+  const personRow = (person, freeClass) => days.map(d=>{
+    const ymd = dateStr(d);
+    const cls = [isBusy(person, ymd) ? '' : freeClass, ymd === today ? 'today' : ''].filter(Boolean).join(' ');
+    return `<div class="cell ${cls}">${dayLabel(d)}</div>`;
+  }).join('');
+  const mergedRow = days.map(d=>{
+    const ymd = dateStr(d);
+    const bothFree = !isBusy('michal', ymd) && !isBusy('ona', ymd);
+    const cls = [bothFree ? 'both' : '', ymd === today ? 'today' : ''].filter(Boolean).join(' ');
+    return `<div class="cell ${cls}"></div>`;
+  }).join('');
+  document.getElementById('weekStrip').innerHTML = `
+    <div>
+      <div class="lane-label"><span class="avatar" style="background:var(--michal)">M</span>${PERSON_NAMES.michal}</div>
+      <div class="lane">${personRow('michal', 'free')}</div>
+    </div>
+    <div>
+      <div class="lane-label"><span class="avatar" style="background:var(--ona)">A</span>${PERSON_NAMES.ona}</div>
+      <div class="lane">${personRow('ona', 'ona-free')}</div>
+    </div>
+    <div class="lane merged">${mergedRow}</div>
+  `;
+  const freeDayNames = days
+    .filter(d=>{ const ymd = dateStr(d); return !isBusy('michal', ymd) && !isBusy('ona', ymd); })
+    .map(d=>d.toLocaleDateString('pl-PL', {weekday:'long'}));
+  document.getElementById('weekStripCaption').innerHTML = freeDayNames.length
+    ? `Wspólna wolna warstwa: <b>${freeDayNames.join(', ')}</b>.`
+    : 'Brak wspólnego wolnego dnia w tym tygodniu.';
+}
+
+function renderIdeas(){
+  const el = document.getElementById('ideaList');
+  if(!ideasLoaded){
+    el.innerHTML = '<div class="empty">Wczytywanie…</div>';
+  }else if(ideas.length === 0){
+    el.innerHTML = '<div class="empty">Nikt jeszcze nic nie dodał.</div>';
+  }else{
+    const sorted = [...ideas].sort((a,b)=> (a.done?1:0) - (b.done?1:0) || a.createdAt - b.createdAt);
+    el.innerHTML = sorted.map(idea => `
+      <div class="idea-row">
+        <button type="button" class="idea-check" data-id="${idea.id}" data-done="${!!idea.done}" aria-label="Oznacz jako wypróbowane" ${me ? '' : 'disabled'}></button>
+        <div class="idea-name" data-done="${!!idea.done}">${escapeHtml(idea.name)}</div>
+        <div class="idea-added">${idea.addedBy ? `dodał${idea.addedBy === 'ona' ? 'a' : ''} ${PERSON_NAMES[idea.addedBy] || idea.addedBy}` : ''}</div>
+        <button type="button" class="idea-del" data-id="${idea.id}" aria-label="Usuń" ${me ? '' : 'disabled'}>${ICON_XMARK}</button>
+      </div>
+    `).join('');
+    el.querySelectorAll('.idea-check').forEach(btn=>{
+      btn.addEventListener('click', ()=>toggleIdea(btn.dataset.id));
+    });
+    el.querySelectorAll('.idea-del').forEach(btn=>{
+      btn.addEventListener('click', ()=>deleteIdea(btn.dataset.id));
+    });
+  }
+  document.getElementById('ideaAddBtn').disabled = !me;
+  document.getElementById('ideaInput').disabled = !me;
+}
+
+async function addIdea(){
+  const input = document.getElementById('ideaInput');
+  const name = input.value.trim();
+  if(!name || !me) return;
+  const id = 'idea_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  const idea = { id, name, addedBy: me, done: false, createdAt: Date.now() };
+  input.value = '';
+  try{ await setDoc(doc(firestore, 'place_ideas', id), idea); }
+  catch(e){ setStatus('Nie udało się dodać — spróbuj ponownie.'); }
+}
+
+async function toggleIdea(id){
+  const idea = ideas.find(i=>i.id === id);
+  if(!idea) return;
+  try{ await setDoc(doc(firestore, 'place_ideas', id), { done: !idea.done }, { merge: true }); }
+  catch(e){}
+}
+
+async function deleteIdea(id){
+  try{ await deleteDoc(doc(firestore, 'place_ideas', id)); }
+  catch(e){}
+}
+
+document.getElementById('ideaAddBtn').addEventListener('click', addIdea);
+document.getElementById('ideaInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); addIdea(); }
+});
 
 let pendingConfirmYmd = null;
 
@@ -1743,10 +1963,13 @@ function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;'
 function renderAll(){
   renderTripList();
   renderFreeList();
+  renderWeekStrip();
+  renderPlannerHero();
   renderCalendar();
   renderDiets();
   renderConfirmed();
   renderDistance();
+  renderIdeas();
 }
 
 function renderDiets(){
@@ -1851,6 +2074,8 @@ function loadCache(){
     if(p) profiles = JSON.parse(p);
     const c = localStorage.getItem('kolacja_cache_confirmed');
     if(c) confirmed = JSON.parse(c);
+    const i = localStorage.getItem('kolacja_cache_ideas');
+    if(i) ideas = JSON.parse(i);
   }catch(e){}
 }
 
@@ -1909,6 +2134,16 @@ function init(){
     renderConfirmed();
     renderFreeList();
     renderCalendar();
+    renderPlannerHero();
+  }, err=>{
+    setOffline(true);
+  });
+  onSnapshot(ideasCol, snap=>{
+    setOffline(false);
+    ideas = snap.docs.map(d=>d.data());
+    ideasLoaded = true;
+    saveCache('kolacja_cache_ideas', ideas);
+    renderIdeas();
   }, err=>{
     setOffline(true);
   });
