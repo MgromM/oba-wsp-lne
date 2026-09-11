@@ -485,6 +485,8 @@
   .day.confirmed{ background:var(--both-line); box-shadow: inset 0 0 0 2px var(--ink); }
   .day.confirmed .num{ color:#2b2630; }
   .day.confirmed .num::after{ content:none; }
+  .day.proposed{ background:var(--both-bg); box-shadow: inset 0 0 0 2px var(--both-line); border-style:dashed; }
+  .day.proposed .num::after{ content:none; }
 
   .fireworks-canvas{
     position:fixed; inset:0; z-index:200; pointer-events:none;
@@ -553,11 +555,22 @@
     border:none; background:transparent; color:var(--ink-soft); font-family:inherit;
     font-size:13.5px; text-decoration:underline; cursor:pointer; padding:8px;
   }
-  .distance-map{ height:200px; border-radius:12px; margin-top:12px; overflow:hidden; }
+  .distance-map{ height:200px; border-radius:12px; margin-top:12px; overflow:hidden; isolation:isolate; }
   .distance-map[hidden]{ display:none; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal){
+    await OneSignal.init({
+      appId: "0e179f57-c4e6-4d10-998e-ce35527ffc0b",
+      serviceWorkerPath: "sw.js",
+      serviceWorkerParam: { scope: "/" }
+    });
+  });
+</script>
 </head>
 <body>
 <div class="onboard-overlay" id="onboardOverlay" hidden>
@@ -612,8 +625,8 @@
   <div class="onboard-card">
     <div class="onboard-step">
       <div class="onboard-eyebrow">Ostatni krok</div>
-      <h2>W jakim mieście jecie kolację?</h2>
-      <p class="onboard-sub">Dzięki temu pokażemy pogodę na ten dzień.</p>
+      <h2>W jakim mieście proponujesz kolację?</h2>
+      <p class="onboard-sub">Druga osoba dostanie powiadomienie i będzie mogła zaakceptować ten termin.</p>
       <div class="city-combo">
         <input type="text" id="confirmCityInput" maxlength="60" placeholder="Wpisz albo wybierz miasto" autocomplete="off">
         <ul class="city-suggestions" id="confirmCitySuggestions" hidden></ul>
@@ -621,7 +634,7 @@
       <div class="onboard-error" id="confirmCityError" hidden></div>
       <div class="onboard-actions">
         <button type="button" class="onboard-skip" id="confirmCityCancel">Anuluj</button>
-        <button type="button" class="primary" id="confirmCityOk">Potwierdź kolację</button>
+        <button type="button" class="primary" id="confirmCityOk">Zaproponuj termin</button>
       </div>
     </div>
   </div>
@@ -877,7 +890,23 @@ function setWho(person){
   updateLocPlaceholder();
   fillDietForm();
   maybeShowOnboarding();
+  identifyPushUser(person);
   renderAll();
+}
+
+// Links this browser to "michal" or "ona" in OneSignal (External ID + tag), so the
+// other person's browser can target a push straight at them via the REST API.
+function identifyPushUser(person){
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal){
+    try{
+      await OneSignal.login(person);
+      await OneSignal.User.addTag('person', person);
+      if(OneSignal.Notifications.permission !== true && OneSignal.Notifications.permission !== 'granted'){
+        await OneSignal.Notifications.requestPermission();
+      }
+    }catch(e){}
+  });
 }
 
 function onboardKey(person){ return 'kolacja_onboarded_' + person; }
@@ -972,6 +1001,7 @@ function effectiveLocation(person){
 
 
 let distanceMapInstance = null;
+let lastDistanceKey = null;
 
 function renderDistanceMap(a, b){
   const mapEl = document.getElementById('distanceMap');
@@ -998,6 +1028,7 @@ function renderDistance(){
     card.hidden = true;
     mapEl.hidden = true;
     if(distanceMapInstance){ distanceMapInstance.remove(); distanceMapInstance = null; }
+    lastDistanceKey = null;
     return;
   }
   const km = haversineKm(a, b);
@@ -1006,6 +1037,11 @@ function renderDistance(){
     <div class="distance-km">${km} km</div>
     <div class="distance-meta">${PERSON_NAMES.michal}: ${escapeHtml(a.label || '?')} · ${PERSON_NAMES.ona}: ${escapeHtml(b.label || '?')}</div>
   `;
+  // Rebuilding the Leaflet map re-fetches every OSM tile over the network — skip it
+  // when the two locations haven't actually moved since the last render.
+  const key = `${a.lat},${a.lon}|${b.lat},${b.lon}`;
+  if(key === lastDistanceKey) return;
+  lastDistanceKey = key;
   renderDistanceMap(a, b);
 }
 
@@ -1234,10 +1270,13 @@ function renderFreeList(){
   }
   el.innerHTML = out.map(d => {
     const ymd = dateStr(d);
-    const isConfirmed = confirmed && confirmed.date === ymd;
+    const isThis = confirmed && confirmed.date === ymd;
+    const hasActive = !!confirmed;
+    let label = 'Zaproponuj ten dzień';
+    if(isThis) label = confirmed.status === 'proposed' ? 'Propozycja wysłana' : 'Wybrano ✓';
     return `<div class="free-item">
       <div class="free-item-dates"><span>${d.toLocaleDateString('pl-PL',{weekday:'long'})}</span><span>${fmt(d)}</span></div>
-      <button class="pick-btn" data-ymd="${ymd}" ${!me || isConfirmed ? 'disabled' : ''}>${isConfirmed ? 'Wybrano ✓' : 'Wybieramy ten dzień'}</button>
+      <button class="pick-btn" data-ymd="${ymd}" ${!me || hasActive ? 'disabled' : ''}>${label}</button>
     </div>`;
   }).join('');
   el.querySelectorAll('.pick-btn').forEach(btn=>{
@@ -1340,6 +1379,39 @@ function renderConfirmed(){
   card.hidden = false;
   const d = parse(confirmed.date);
   const countdown = countdownText(d);
+  const isProposal = confirmed.status === 'proposed';
+
+  if(isProposal){
+    const iAmProposer = me && confirmed.proposedBy === me;
+    const heading = iAmProposer
+      ? `Czekamy na odpowiedź ${PERSON_NAMES[otherPerson(me)]}`
+      : `${PERSON_NAMES[confirmed.proposedBy] || confirmed.proposedBy} proponuje kolację`;
+    body.innerHTML = `
+      <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
+      <div class="confirmed-meta">${heading}${confirmed.city ? ` · ${escapeHtml(confirmed.city)}` : ''}</div>
+      ${countdown ? `<div class="confirmed-countdown" id="confirmedCountdown">${countdown}</div>` : ''}
+      <div class="confirmed-actions">
+        ${iAmProposer
+          ? `<button class="unconfirm-btn" id="unconfirmBtn">Wycofaj propozycję</button>`
+          : `<button class="primary" id="acceptBtn" ${me ? '' : 'disabled'}>Akceptuję</button>
+             <button class="unconfirm-btn" id="declineBtn" ${me ? '' : 'disabled'}>Nie mogę</button>`}
+      </div>
+      ${me ? '' : '<div class="confirmed-meta">Wybierz kto jesteś, żeby odpowiedzieć.</div>'}
+    `;
+    if(iAmProposer){
+      document.getElementById('unconfirmBtn').addEventListener('click', unconfirmDate);
+    }else{
+      document.getElementById('acceptBtn').addEventListener('click', acceptProposal);
+      document.getElementById('declineBtn').addEventListener('click', declineProposal);
+    }
+    confirmedCountdownInterval = setInterval(()=>{
+      const el = document.getElementById('confirmedCountdown');
+      const text = countdownText(parse(confirmed.date));
+      if(el && text) el.textContent = text;
+    }, 60000);
+    return;
+  }
+
   body.innerHTML = `
     <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
     <div class="confirmed-meta">Wybrane przez ${PERSON_NAMES[confirmed.confirmedBy] || confirmed.confirmedBy}</div>
@@ -1446,19 +1518,64 @@ function playFireworks(){
   tick();
 }
 
-async function confirmDate(ymd, city, lat, lon){
+function otherPerson(person){ return person === 'michal' ? 'ona' : 'michal'; }
+
+// Set this to the *.workers.dev URL after deploying cloudflare-worker/send-push.js —
+// that worker holds the OneSignal REST API Key so it never ships to the browser.
+const PUSH_ENDPOINT = 'https://kolacja-send-push.michalgromjr.workers.dev';
+
+async function sendPushToOther(fromPerson, title, message){
+  if(!PUSH_ENDPOINT) return;
+  try{
+    await fetch(PUSH_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toExternalId: otherPerson(fromPerson), title, message })
+    });
+  }catch(e){ /* push is best-effort; the in-app state is already saved */ }
+}
+
+async function proposeDate(ymd, city, lat, lon){
   if(!me) return;
   if(isBusy('michal', ymd) || isBusy('ona', ymd)){
     setStatus('Ten dzień właśnie przestał być wolny — wybierz inny.');
     renderFreeList();
     return;
   }
-  confirmed = { date: ymd, confirmedBy: me, confirmedAt: Date.now(), city: city || null, lat: lat ?? null, lon: lon ?? null };
+  confirmed = { date: ymd, status: 'proposed', proposedBy: me, proposedAt: Date.now(), city: city || null, lat: lat ?? null, lon: lon ?? null };
   renderConfirmed();
   renderFreeList();
   renderCalendar();
   try{ await setDoc(confirmedDocRef, confirmed); }
-  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); return; }
+  sendPushToOther(me, 'Propozycja kolacji 🍽', `${PERSON_NAMES[me]} proponuje ${fmt(parse(ymd))}${city ? ` w ${city}` : ''} — otwórz appkę, żeby zaakceptować.`);
+}
+
+async function acceptProposal(){
+  if(!me || !confirmed || confirmed.status !== 'proposed') return;
+  confirmed = { ...confirmed, status: 'confirmed', confirmedBy: me, confirmedAt: Date.now() };
+  renderConfirmed();
+  renderFreeList();
+  renderCalendar();
+  playFireworks();
+  try{ await setDoc(confirmedDocRef, confirmed); }
+  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); return; }
+  sendPushToOther(me, 'Kolacja potwierdzona! 🎉', `${PERSON_NAMES[me]} zaakceptował(a) termin ${fmt(parse(confirmed.date))}.`);
+}
+
+async function declineProposal(){
+  if(!confirmed) return;
+  const proposer = confirmed.proposedBy;
+  const declinedDate = confirmed.date;
+  confirmed = null;
+  renderConfirmed();
+  renderFreeList();
+  renderCalendar();
+  try{ await deleteDoc(confirmedDocRef); }
+  catch(err){ setStatus('Nie udało się odrzucić — spróbuj ponownie.'); return; }
+  if(me && proposer && proposer !== me){
+    sendPushToOther(me, 'Propozycja odrzucona', `${PERSON_NAMES[me]} nie może ${fmt(parse(declinedDate))} — zaproponuj inny dzień.`);
+  }
 }
 
 document.getElementById('confirmCityCancel').addEventListener('click', closeConfirmCityModal);
@@ -1483,7 +1600,7 @@ document.getElementById('confirmCityOk').addEventListener('click', async ()=>{
     return;
   }
   closeConfirmCityModal();
-  await confirmDate(ymd, city, coords.lat, coords.lon);
+  await proposeDate(ymd, city, coords.lat, coords.lon);
 });
 
 const WEATHER_CODE_ICONS = {
@@ -1523,13 +1640,26 @@ async function fetchConfirmedWeather(){
   }catch(e){ return null; }
 }
 
-async function renderConfirmedWeather(){
-  const el = document.getElementById('confirmedWeather');
-  if(!el) return;
-  const weather = await fetchConfirmedWeather();
+let lastWeatherKey = null;
+let lastWeatherResult = null;
+
+function paintConfirmedWeather(el, weather){
   if(!weather){ el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   el.innerHTML = `${weather.icon} ${weather.min}°–${weather.max}°C wieczorem${weather.rain!=null ? ` · ${weather.rain}% szans na deszcz` : ''}${confirmed.city ? ` w ${confirmed.city}` : ''}`;
+}
+
+async function renderConfirmedWeather(){
+  const el = document.getElementById('confirmedWeather');
+  if(!el || !confirmed) return;
+  // The forecast API is best-effort and slow — skip re-fetching it when the
+  // confirmed date/location haven't changed since the last render.
+  const key = `${confirmed.date}|${confirmed.lat}|${confirmed.lon}`;
+  if(key === lastWeatherKey){ paintConfirmedWeather(el, lastWeatherResult); return; }
+  const weather = await fetchConfirmedWeather();
+  lastWeatherKey = key;
+  lastWeatherResult = weather;
+  paintConfirmedWeather(el, weather);
 }
 
 async function unconfirmDate(){
@@ -1567,7 +1697,7 @@ function buildMonthTable(monthDate){
       else if(busyM) cls += ' busy-michal';
       else if(busyO) cls += ' busy-ona';
       else if(ymd >= today) cls += ' free';
-      if(confirmed && confirmed.date === ymd) cls += ' confirmed';
+      if(confirmed && confirmed.date === ymd) cls += confirmed.status === 'proposed' ? ' proposed' : ' confirmed';
       cls += ' clickable';
       const clickable = ' data-ymd="'+ymd+'" tabindex="0" role="button"';
       return `<td><div class="${cls}"${clickable}><div class="num">${d}</div></div></td>`;
@@ -1814,16 +1944,16 @@ function init(){
     setOffline(true);
   });
   let firstConfirmedSnapshot = true;
-  let previousConfirmedDate = null;
+  let previousConfirmedStatus = null;
   onSnapshot(confirmedDocRef, snap=>{
     setOffline(false);
     confirmed = snap.exists() ? snap.data() : null;
     saveCache('kolacja_cache_confirmed', confirmed);
-    const newDate = confirmed ? confirmed.date : null;
-    if(!firstConfirmedSnapshot && newDate && newDate !== previousConfirmedDate){
+    const newStatus = confirmed ? confirmed.status : null;
+    if(!firstConfirmedSnapshot && newStatus === 'confirmed' && previousConfirmedStatus !== 'confirmed'){
       playFireworks();
     }
-    previousConfirmedDate = newDate;
+    previousConfirmedStatus = newStatus;
     firstConfirmedSnapshot = false;
     renderConfirmed();
     renderFreeList();
