@@ -37,8 +37,10 @@ async function main() {
   }
 
   const confirmed = snap.data();
-  if (confirmed.status !== 'confirmed') {
-    console.log('Nothing confirmed (only a pending proposal, or old shape) — skipping.');
+  // Docs written before the propose/accept flow existed have no `status` field
+  // at all — those were always a done deal, so treat missing status as confirmed.
+  if (confirmed.status && confirmed.status !== 'confirmed') {
+    console.log('Only a pending proposal, not yet accepted — skipping.');
     return;
   }
   if (confirmed.surveySent) {
