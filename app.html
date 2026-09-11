@@ -363,9 +363,6 @@
     overflow:hidden;
   }
   .day .num{ white-space:nowrap; }
-  @media (max-width:380px){
-    .day.free .num::after{ display:none; }
-  }
   .day.pad{ visibility:hidden; }
   .day.past{ opacity:.35; }
   .day.today{ box-shadow: inset 0 0 0 2px var(--ink); }
@@ -395,6 +392,16 @@
     margin-top:8px; padding-top:8px; border-top:1px solid var(--line);
     font-weight:600; font-size:13.5px;
   }
+  .day-popover-propose{
+    display:block; width:100%; margin-top:10px; border:none; background:var(--ink); color:var(--paper);
+    padding:10px 14px; border-radius:9px; font-family:inherit; font-weight:700; font-size:13.5px; cursor:pointer;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .day-popover-propose{ background:var(--michal); color:#12211c; } }
+  :root[data-theme="dark"] .day-popover-propose{ background:var(--michal); color:#12211c; }
+  .day-popover-status{
+    margin-top:10px; padding-top:8px; border-top:1px solid var(--line);
+    font-weight:600; font-size:13px; color:var(--ink-soft);
+  }
   .day-popover-close{
     position:absolute; top:4px; right:4px; border:none; background:transparent;
     color:var(--ink-soft); cursor:pointer;
@@ -402,28 +409,37 @@
     min-width:32px; min-height:32px;
   }
   .day .num{ font-weight:600; }
-  .day.free{ background:var(--both-bg); border-color:var(--both-line); }
+  /* "free" (nobody busy) stays visually quiet — a small utensil mark, no fill —
+     so the gold accent stays reserved for an actual confirmed/proposed dinner
+     and doesn't get lost among every other ordinary free day in the month. */
   .day.free .num::after{
     content:'';
     display:inline-block;
     width:10px; height:10px;
     margin-left:3px;
     vertical-align:-1px;
-    background-color:var(--both-line);
+    background-color:var(--ink-soft);
+    opacity:.55;
     -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
     mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
   }
   .day.busy-michal{ background:var(--michal-bg); }
   .day.busy-ona{ background:var(--ona-bg); }
-  .day.busy-both{ background:linear-gradient(135deg, var(--michal-bg) 0 50%, var(--ona-bg) 50% 100%); }
-  .day-dots{ display:flex; gap:3px; margin-top:3px; }
+  /* Both busy: a plain neutral fill (not a diagonal split, illegible at this size)
+     plus two color-coded dots — color is never the only signal. */
+  .day.busy-both{ background:var(--line); }
+  .day-dots{ display:flex; gap:3px; position:absolute; top:5px; right:6px; }
+  .day-dots .dot{ width:6px; height:6px; }
 
   .legend{ display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; font-size:13px; color:var(--ink-soft); }
   .legend span{ display:inline-flex; align-items:center; gap:6px; }
   .legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
-  .legend i.free{ background:var(--both-bg); border:1px solid var(--both-line); }
+  .legend i.free{ background:none; border:1px solid var(--line); }
   .legend i.michal{ background:var(--michal-bg); border:1px solid var(--michal); }
   .legend i.ona{ background:var(--ona-bg); border:1px solid var(--ona); }
+  .legend i.both{ background:var(--line); border:1px solid var(--ink-soft); }
+  .legend i.planned{ background:var(--both-line); border:1px solid var(--both-line); }
+  .legend i.today{ background:none; border:2px solid var(--ink); }
 
   .free-list{ display:flex; flex-direction:column; gap:5px; }
   .free-list .free-item{
@@ -584,8 +600,19 @@
   }
   .week-grid .cell.free{ background:var(--michal-bg); opacity:1; }
   .week-grid .cell.ona-free{ background:var(--ona-bg); opacity:1; }
-  .week-grid .cell.both{ background:var(--both-bg); border:1.5px solid var(--both-line); opacity:1; }
+  .week-grid .cell.both{ background:var(--line); opacity:1; }
   .week-grid .cell.both::after{
+    content:'';
+    position:absolute; inset:0; margin:auto; width:14px; height:14px;
+    background-color:var(--ink-soft);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  .week-grid .cell.confirmed, .week-grid .cell.proposed{
+    background:var(--both-bg); border:1.5px solid var(--both-line); opacity:1;
+  }
+  .week-grid .cell.proposed{ border-style:dashed; }
+  .week-grid .cell.confirmed::after, .week-grid .cell.proposed::after{
     content:'';
     position:absolute; inset:0; margin:auto; width:14px; height:14px;
     background-color:var(--both-line);
@@ -733,7 +760,7 @@
   </div>
 
   <div class="card week-strip-card" id="weekStripCard">
-    <h2>Ten tydzień</h2>
+    <h2>Najbliższe 7 dni</h2>
     <div class="week-grid" id="weekStrip"></div>
     <div class="merge-caption" id="weekStripCaption"></div>
   </div>
@@ -841,6 +868,9 @@
         <span><i class="free"></i>oboje wolni</span>
         <span><i class="michal"></i>Michał zajęty</span>
         <span><i class="ona"></i>Aga zajęta</span>
+        <span><i class="both"></i>oboje zajęci</span>
+        <span><i class="planned"></i>zaplanowana / proponowana kolacja</span>
+        <span><i class="today"></i>dziś</span>
       </div>
     </div>
   </div>
@@ -1081,6 +1111,26 @@ function effectiveLocation(person){
 
 let distanceMapInstance = null;
 let lastDistanceKey = null;
+let distanceMapVisible = false;
+let pendingDistanceCoords = null;
+let distanceMapObserver = null;
+
+// The map only starts fetching OSM tiles once its card actually scrolls into
+// view — on first load it otherwise competes with Firestore/fonts for the
+// same network connections right when the page needs to feel fast.
+function ensureDistanceMapObserver(){
+  if(distanceMapObserver || distanceMapVisible) return;
+  const card = document.getElementById('distanceCard');
+  if(!card || typeof IntersectionObserver === 'undefined'){ distanceMapVisible = true; return; }
+  distanceMapObserver = new IntersectionObserver(entries=>{
+    if(entries.some(e=>e.isIntersecting)){
+      distanceMapVisible = true;
+      distanceMapObserver.disconnect();
+      if(pendingDistanceCoords) renderDistanceMap(pendingDistanceCoords.a, pendingDistanceCoords.b);
+    }
+  }, { rootMargin: '150px' });
+  distanceMapObserver.observe(card);
+}
 
 function renderDistanceMap(a, b){
   const mapEl = document.getElementById('distanceMap');
@@ -1121,7 +1171,12 @@ function renderDistance(){
   const key = `${a.lat},${a.lon}|${b.lat},${b.lon}`;
   if(key === lastDistanceKey) return;
   lastDistanceKey = key;
-  renderDistanceMap(a, b);
+  ensureDistanceMapObserver();
+  if(distanceMapVisible){
+    renderDistanceMap(a, b);
+  }else{
+    pendingDistanceCoords = { a, b };
+  }
 }
 
 function seasonInfo(){
@@ -1386,34 +1441,28 @@ function renderPlannerHero(){
   btn.onclick = ()=>openConfirmCityModal(ymd);
 }
 
-function startOfWeekDate(ymd){
-  const d = parse(ymd);
-  const dow = d.getDay();
-  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
-  return d;
-}
-
 function renderWeekStrip(){
   if(!tripsLoaded) return;
   const today = todayStr();
-  const start = startOfWeekDate(today);
   const days = [];
   for(let i=0; i<7; i++){
-    const d = new Date(start);
+    const d = parse(today);
     d.setDate(d.getDate() + i);
     days.push(d);
   }
-  const dayLabel = d => DAY_NAMES[(d.getDay() + 6) % 7];
-  const headRow = days.map(d=>`<div class="head ${dateStr(d) === today ? 'today' : ''}">${dayLabel(d)}</div>`).join('');
-  const personRow = (person, freeClass) => days.map(d=>{
+  const dayLabel = (d, i) => i === 0 ? 'Dziś' : DAY_NAMES[(d.getDay() + 6) % 7];
+  const headRow = days.map((d,i)=>`<div class="head ${i===0 ? 'today' : ''}">${dayLabel(d,i)}</div>`).join('');
+  const personRow = (person, freeClass) => days.map((d,i)=>{
     const ymd = dateStr(d);
-    const cls = [isBusy(person, ymd) ? '' : freeClass, ymd === today ? 'today' : ''].filter(Boolean).join(' ');
+    const cls = [isBusy(person, ymd) ? '' : freeClass, i===0 ? 'today' : ''].filter(Boolean).join(' ');
     return `<div class="cell ${cls}"></div>`;
   }).join('');
-  const mergedRow = days.map(d=>{
+  const mergedRow = days.map((d,i)=>{
     const ymd = dateStr(d);
     const bothFree = !isBusy('michal', ymd) && !isBusy('ona', ymd);
-    const cls = [bothFree ? 'both' : '', ymd === today ? 'today' : ''].filter(Boolean).join(' ');
+    let stateCls = bothFree ? 'both' : '';
+    if(confirmed && confirmed.date === ymd) stateCls = confirmed.status === 'proposed' ? 'proposed' : 'confirmed';
+    const cls = [stateCls, i===0 ? 'today' : ''].filter(Boolean).join(' ');
     return `<div class="cell ${cls}"></div>`;
   }).join('');
   document.getElementById('weekStrip').innerHTML = `
@@ -1422,12 +1471,20 @@ function renderWeekStrip(){
     <div class="row-label"><span class="avatar" style="background:var(--ona)">A</span>${PERSON_NAMES.ona}</div>${personRow('ona', 'ona-free')}
     <div class="row-label"><span class="avatar both-avatar">${ICON_UTENSILS}</span>Oboje</div>${mergedRow}
   `;
-  const freeDayNames = days
-    .filter(d=>{ const ymd = dateStr(d); return !isBusy('michal', ymd) && !isBusy('ona', ymd); })
-    .map(d=>d.toLocaleDateString('pl-PL', {weekday:'long'}));
-  document.getElementById('weekStripCaption').innerHTML = freeDayNames.length
-    ? `Wspólna wolna warstwa: <b>${freeDayNames.join(', ')}</b>.`
-    : 'Brak wspólnego wolnego dnia w tym tygodniu.';
+  if(confirmed){
+    document.getElementById('weekStripCaption').innerHTML = confirmed.date >= today && confirmed.date <= dateStr(days[6])
+      ? (confirmed.status === 'proposed'
+          ? `Propozycja czeka na odpowiedź: <b>${parse(confirmed.date).toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</b>.`
+          : `Zaplanowana kolacja: <b>${parse(confirmed.date).toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</b>.`)
+      : 'Macie już zaplanowany termin — zobacz kartę powyżej.';
+  }else{
+    const freeDayNames = days
+      .filter(d=>{ const ymd = dateStr(d); return !isBusy('michal', ymd) && !isBusy('ona', ymd); })
+      .map((d,i)=> i===0 ? 'dziś' : d.toLocaleDateString('pl-PL', {weekday:'long'}));
+    document.getElementById('weekStripCaption').innerHTML = freeDayNames.length
+      ? `Wspólnie wolni: <b>${freeDayNames.join(', ')}</b>.`
+      : 'Brak wspólnego wolnego dnia w najbliższych 7 dniach.';
+  }
 }
 
 function renderIdeas(){
@@ -1879,7 +1936,8 @@ function buildMonthTable(monthDate){
       if(confirmed && confirmed.date === ymd) cls += confirmed.status === 'proposed' ? ' proposed' : ' confirmed';
       cls += ' clickable';
       const clickable = ' data-ymd="'+ymd+'" tabindex="0" role="button"';
-      return `<td><div class="${cls}"${clickable}><div class="num">${d}</div></div></td>`;
+      const dots = busyM && busyO ? '<div class="day-dots"><span class="dot michal"></span><span class="dot ona"></span></div>' : '';
+      return `<td><div class="${cls}"${clickable}><div class="num">${d}</div>${dots}</div></td>`;
     }).join('') + '</tr>';
   }
 
@@ -1919,8 +1977,22 @@ function showDayPopover(dayEl){
   const distanceRow = (locMichal && locOna)
     ? `<div class="day-popover-distance-total">${haversineKm(locMichal, locOna)} km od siebie</div>`
     : '';
-  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">${ICON_XMARK}</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${distanceRow}`;
+  const today = todayStr();
+  const bothFree = !isBusy('michal', ymd) && !isBusy('ona', ymd);
+  const canPropose = me && bothFree && ymd >= today && !confirmed;
+  const actionRow = canPropose
+    ? `<button type="button" class="day-popover-propose" id="dayPopoverPropose">Zaproponuj ten dzień →</button>`
+    : (confirmed && confirmed.date === ymd
+        ? `<div class="day-popover-status">${confirmed.status === 'proposed' ? 'Propozycja czeka na odpowiedź' : 'Tu jest wasza kolacja 🎉'}</div>`
+        : '');
+  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">${ICON_XMARK}</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${distanceRow}${actionRow}`;
   pop.hidden = false;
+  if(canPropose){
+    document.getElementById('dayPopoverPropose').addEventListener('click', ()=>{
+      hideDayPopover();
+      openConfirmCityModal(ymd);
+    });
+  }
   const rect = dayEl.getBoundingClientRect();
   const popRect = pop.getBoundingClientRect();
   const maxLeft = window.innerWidth - popRect.width - 10;
@@ -2143,6 +2215,7 @@ function init(){
     renderFreeList();
     renderCalendar();
     renderPlannerHero();
+    renderWeekStrip();
   }, err=>{
     setOffline(true);
   });
