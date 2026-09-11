@@ -32,10 +32,19 @@ export default {
       return new Response('Bad JSON', { status: 400, headers: CORS_HEADERS });
     }
 
-    const { toExternalId, title, message } = body || {};
+    const { toExternalId, title, message, url } = body || {};
     if (!toExternalId || !title || !message) {
       return new Response('Missing fields', { status: 400, headers: CORS_HEADERS });
     }
+
+    const payload = {
+      app_id: ONESIGNAL_APP_ID,
+      include_aliases: { external_id: [String(toExternalId)] },
+      target_channel: 'push',
+      headings: { en: String(title) },
+      contents: { en: String(message) },
+    };
+    if (url) payload.url = String(url);
 
     const res = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -43,13 +52,7 @@ export default {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${env.ONESIGNAL_REST_API_KEY}`,
       },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_aliases: { external_id: [String(toExternalId)] },
-        target_channel: 'push',
-        headings: { en: String(title) },
-        contents: { en: String(message) },
-      }),
+      body: JSON.stringify(payload),
     });
 
     return new Response(await res.text(), { status: res.status, headers: CORS_HEADERS });
