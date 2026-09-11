@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Szkic: kolacja × Cupla</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --paper:#faf6f0;
+    --paper-raised:#ffffff;
+    --ink:#2b2630;
+    --ink-soft:#6b6270;
+    --line:#e7ddd0;
+    --michal:#2f6f62;
+    --michal-bg:#e3efe9;
+    --ona:#b8365f;
+    --ona-bg:#f8e6ec;
+    --both-bg:#fff2c7;
+    --both-line:#d8ab2b;
+    --shadow: 0 1px 2px rgba(43,38,48,.06), 0 10px 28px rgba(43,38,48,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1c1a1f; --paper-raised:#262330; --ink:#ede8f0; --ink-soft:#a89fb0;
+      --line:#3a3542; --michal:#6fcbb3; --michal-bg:#22332e;
+      --ona:#f292b3; --ona-bg:#3a2530; --both-bg:#4a3d1a; --both-line:#c9a331;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1c1a1f; --paper-raised:#262330; --ink:#ede8f0; --ink-soft:#a89fb0;
+    --line:#3a3542; --michal:#6fcbb3; --michal-bg:#22332e;
+    --ona:#f292b3; --ona-bg:#3a2530; --both-bg:#4a3d1a; --both-line:#c9a331;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.4);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif; font-size:15px; line-height:1.5;
+  }
+  .wrap{ max-width:1080px; margin:0 auto; padding:28px 20px 80px; }
+
+  .tag{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink-soft); margin-bottom:10px;
+  }
+  .tag .dot{ width:6px; height:6px; border-radius:50%; background:var(--both-line); }
+  h1{
+    font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(28px,4vw,40px);
+    margin:0 0 6px; text-wrap:balance; letter-spacing:-.01em;
+  }
+  .lede{ color:var(--ink-soft); font-size:15px; max-width:56ch; margin:0 0 32px; }
+
+  /* ---------- merged calendar hero ---------- */
+  .merge-hero{
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:22px;
+    box-shadow:var(--shadow); padding:22px; margin-bottom:20px;
+    display:grid; grid-template-columns: 1fr; gap:18px;
+  }
+  @media (min-width:760px){ .merge-hero{ grid-template-columns: 1.3fr 1fr; padding:28px; } }
+
+  .lanes{ display:flex; flex-direction:column; gap:10px; }
+  .lane-label{
+    display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700;
+    color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;
+  }
+  .lane-label .avatar{
+    width:18px; height:18px; border-radius:50%; font-size:10px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; color:#fff; flex:none;
+  }
+  .lane{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .lane.merged{ margin-top:4px; }
+  .cell{
+    height:30px; border-radius:7px; position:relative;
+    font-size:10.5px; font-weight:700; display:flex; align-items:flex-end; justify-content:center;
+    padding-bottom:3px; font-variant-numeric:tabular-nums; color:var(--ink-soft);
+  }
+  .cell.free{ background:var(--michal-bg); color:var(--michal); }
+  .cell.busy{ background:var(--line); opacity:.6; }
+  .cell.ona-free{ background:var(--ona-bg); color:var(--ona); }
+  .cell.ona-busy{ background:var(--line); opacity:.6; }
+  .cell.both{
+    background:linear-gradient(135deg,var(--both-bg) 0%, var(--both-bg) 100%);
+    border:1.5px solid var(--both-line); color:var(--ink); box-shadow:0 0 0 2px var(--both-bg) inset;
+  }
+  .cell.both::after{
+    content:''; position:absolute; inset:-4px; border-radius:10px;
+    border:1px dashed var(--both-line); opacity:.5;
+  }
+  .merge-caption{
+    font-size:12.5px; color:var(--ink-soft); margin-top:8px; display:flex; align-items:center; gap:6px;
+  }
+  .merge-caption b{ color:var(--ink); font-weight:700; }
+
+  /* right side: date planner */
+  .planner{
+    background:var(--both-bg); border:1px solid var(--both-line); border-radius:16px;
+    padding:20px; display:flex; flex-direction:column; gap:10px; justify-content:center;
+  }
+  .planner-eyebrow{ font-size:12px; font-weight:700; color:#8a6a10; text-transform:uppercase; letter-spacing:.06em; }
+  .planner-date{ font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:26px; line-height:1.15; }
+  .planner-meta{ font-size:13px; color:#6b5a20; }
+  .planner-btn{
+    margin-top:6px; border:none; background:var(--ink); color:var(--paper);
+    padding:13px 18px; border-radius:11px; font-family:inherit; font-weight:700; font-size:14.5px;
+    cursor:pointer; align-self:flex-start;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .planner-btn{ background:var(--michal); color:#12211c; } }
+  :root[data-theme="dark"] .planner-btn{ background:var(--michal); color:#12211c; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .planner{ background:var(--both-bg); } }
+
+  /* ---------- streak ribbon ---------- */
+  .streak{
+    display:flex; align-items:center; gap:16px; background:var(--paper-raised);
+    border:1px solid var(--line); border-radius:16px; padding:16px 20px; margin-bottom:20px;
+    box-shadow:var(--shadow);
+  }
+  .streak-num{ font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:32px; flex:none; }
+  .streak-body{ flex:1; min-width:0; }
+  .streak-title{ font-weight:700; font-size:14px; margin-bottom:2px; }
+  .streak-sub{ color:var(--ink-soft); font-size:12.5px; }
+  .streak-dots{ display:flex; gap:5px; flex:none; }
+  .streak-dots span{ width:9px; height:9px; border-radius:50%; background:var(--line); }
+  .streak-dots span.hit{ background:var(--both-line); }
+
+  /* ---------- two-column: ideas list + rhythm chart ---------- */
+  .grid2{ display:grid; grid-template-columns:1fr; gap:20px; }
+  @media (min-width:760px){ .grid2{ grid-template-columns: 1fr 1fr; } }
+
+  .card{
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:18px;
+    box-shadow:var(--shadow); padding:20px;
+  }
+  .card h2{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:17px; margin:0 0 14px; }
+
+  .idea-row{
+    display:flex; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid var(--line);
+  }
+  .idea-row:last-child{ border-bottom:none; }
+  .idea-check{
+    width:22px; height:22px; border-radius:50%; border:2px solid var(--line); flex:none;
+  }
+  .idea-check.done{ background:var(--michal); border-color:var(--michal); position:relative; }
+  .idea-check.done::after{ content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:800; }
+  .idea-name{ flex:1; font-weight:600; font-size:14px; }
+  .idea-name.done{ text-decoration:line-through; color:var(--ink-soft); font-weight:500; }
+  .idea-added{ font-size:11.5px; color:var(--ink-soft); flex:none; }
+  .idea-add{
+    display:flex; gap:8px; margin-top:14px;
+  }
+  .idea-add input{
+    flex:1; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    border-radius:9px; padding:9px 11px; font:inherit; font-size:14px;
+  }
+  .idea-add button{
+    border:none; background:var(--ink); color:var(--paper); border-radius:9px;
+    padding:0 16px; font:inherit; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .idea-add button{ background:var(--michal); color:#12211c; } }
+  :root[data-theme="dark"] .idea-add button{ background:var(--michal); color:#12211c; }
+
+  .rhythm-bars{ display:flex; align-items:flex-end; gap:10px; height:120px; margin-bottom:10px; }
+  .rhythm-col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end; }
+  .rhythm-bar{ width:100%; max-width:30px; border-radius:6px 6px 3px 3px; background:var(--line); }
+  .rhythm-bar.hit{ background:var(--both-line); }
+  .rhythm-month{ font-size:11px; color:var(--ink-soft); text-transform:capitalize; }
+  .rhythm-note{ font-size:12.5px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:12px; margin-top:4px; }
+  .rhythm-note b{ color:var(--ink); }
+
+  footer.note{
+    margin-top:36px; padding-top:16px; border-top:1px solid var(--line);
+    font-size:12.5px; color:var(--ink-soft); text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="tag"><span class="dot"></span>Szkic koncepcyjny — inspirowany Cupla</div>
+  <h1>Wasz kalendarz, scalony w jeden</h1>
+  <p class="lede">Zamiast osobno przeglądać zajętość Michała i Agi, appka od razu pokazuje ich połączony rytm tygodnia — a wolne wieczory obojga same się podświetlają jako propozycja.</p>
+
+  <div class="merge-hero">
+    <div>
+      <div class="lanes">
+        <div>
+          <div class="lane-label"><span class="avatar" style="background:var(--michal)">M</span>Michał</div>
+          <div class="lane">
+            <div class="cell busy">Pn</div>
+            <div class="cell free">Wt</div>
+            <div class="cell free">Śr</div>
+            <div class="cell busy">Cz</div>
+            <div class="cell free">Pt</div>
+            <div class="cell free">So</div>
+            <div class="cell busy">Nd</div>
+          </div>
+        </div>
+        <div>
+          <div class="lane-label"><span class="avatar" style="background:var(--ona)">A</span>Aga</div>
+          <div class="lane">
+            <div class="cell ona-busy">Pn</div>
+            <div class="cell ona-busy">Wt</div>
+            <div class="cell ona-free">Śr</div>
+            <div class="cell ona-free">Cz</div>
+            <div class="cell ona-free">Pt</div>
+            <div class="cell ona-busy">So</div>
+            <div class="cell ona-free">Nd</div>
+          </div>
+        </div>
+        <div class="lane merged">
+          <div class="cell busy">·</div>
+          <div class="cell busy">·</div>
+          <div class="cell both">Śr</div>
+          <div class="cell busy">·</div>
+          <div class="cell both">Pt</div>
+          <div class="cell busy">·</div>
+          <div class="cell busy">·</div>
+        </div>
+      </div>
+      <div class="merge-caption">Wspólna wolna warstwa <b>środa i piątek</b> — na tych dniach appka opiera swoją propozycję.</div>
+    </div>
+
+    <div class="planner">
+      <div class="planner-eyebrow">Date Planner</div>
+      <div class="planner-date">Piątek, 18 września</div>
+      <div class="planner-meta">Najbliższy wieczór, w którym oboje jesteście wolni — 7 dni od teraz.</div>
+      <button class="planner-btn">Zaproponuj ten dzień →</button>
+    </div>
+  </div>
+
+  <div class="streak">
+    <div class="streak-num">6</div>
+    <div class="streak-body">
+      <div class="streak-title">tygodni z rzędu z randką</div>
+      <div class="streak-sub">Cel: przynajmniej jedna kolacja co tydzień — ostatnia przerwa była w lipcu.</div>
+    </div>
+    <div class="streak-dots">
+      <span class="hit"></span><span class="hit"></span><span class="hit"></span>
+      <span class="hit"></span><span class="hit"></span><span class="hit"></span><span></span>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Do wypróbowania razem</h2>
+      <div class="idea-row">
+        <div class="idea-check done"></div>
+        <div class="idea-name done">Trattoria Prosecco, Olsztyn</div>
+        <div class="idea-added">byliście</div>
+      </div>
+      <div class="idea-row">
+        <div class="idea-check"></div>
+        <div class="idea-name">Nowa gruzińska na Starym Mieście</div>
+        <div class="idea-added">dodał Michał</div>
+      </div>
+      <div class="idea-row">
+        <div class="idea-check"></div>
+        <div class="idea-name">Sushi omakase — polecone przez Kasię</div>
+        <div class="idea-added">dodała Aga</div>
+      </div>
+      <div class="idea-add">
+        <input type="text" placeholder="np. winiarnia z tarasem..." disabled>
+        <button type="button">Dodaj</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Rytm ostatnich miesięcy</h2>
+      <div class="rhythm-bars">
+        <div class="rhythm-col"><div class="rhythm-bar hit" style="height:70%"></div><div class="rhythm-month">kwi</div></div>
+        <div class="rhythm-col"><div class="rhythm-bar hit" style="height:85%"></div><div class="rhythm-month">maj</div></div>
+        <div class="rhythm-col"><div class="rhythm-bar hit" style="height:55%"></div><div class="rhythm-month">cze</div></div>
+        <div class="rhythm-col"><div class="rhythm-bar" style="height:15%"></div><div class="rhythm-month">lip</div></div>
+        <div class="rhythm-col"><div class="rhythm-bar hit" style="height:90%"></div><div class="rhythm-month">sie</div></div>
+        <div class="rhythm-col"><div class="rhythm-bar hit" style="height:60%"></div><div class="rhythm-month">wrz</div></div>
+      </div>
+      <div class="rhythm-note">Lipiec był cichy — appka mogłaby to zauważyć i delikatnie zapytać, zamiast zakładać, że wszystko idzie tak jak zawsze. <b>Bez push, bez presji</b> — tylko baner przy następnym otwarciu appki.</div>
+    </div>
+  </div>
+
+  <footer class="note">
+    To makieta pomysłów, nie działający kod — jeśli coś z tego Ci się podoba, mówisz które kawałki wciągamy do <code>app.html</code>.
+  </footer>
+</div>
+</body>
+</html>
