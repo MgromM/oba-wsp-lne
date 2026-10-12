@@ -225,7 +225,7 @@
     font-family:inherit;
     font-size:16px;
   }
-  input[type="date"]{
+  input[type="date"], input[type="time"]{
     width:auto;
     max-width:140px;
     min-width:0;
@@ -238,8 +238,13 @@
     font-size:16px;
   }
   @media (max-width:380px){
-    input[type="date"]{ padding:11px 6px; }
+    input[type="date"], input[type="time"]{ padding:11px 6px; }
   }
+  input[type="date"], input[type="time"]{ color-scheme:light; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) input[type="date"], :root:not([data-theme="light"]) input[type="time"]{ color-scheme:dark; }
+  }
+  [data-theme="dark"] input[type="date"], [data-theme="dark"] input[type="time"]{ color-scheme:dark; }
   input:focus-visible, select:focus-visible, button:focus-visible, .who-btn:focus-visible{ outline:2px solid var(--michal); outline-offset:2px; }
   button:disabled{ opacity:.4; cursor:not-allowed; }
   button.primary{
@@ -1139,7 +1144,7 @@ function exportConfirmedToIcs(){
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
 }
 
 function renderConfirmed(){
