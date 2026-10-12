@@ -684,34 +684,6 @@
       </div>
     </div>
 
-    <div class="onboard-step" id="obStep1" hidden>
-      <h2>Zanim zaczniesz — jaka dieta?</h2>
-      <p class="onboard-sub">To pomoże wybrać kawiarnię, w której oboje coś zamówicie.</p>
-      <select id="obDietType">
-        <option value="">Bez ograniczeń</option>
-        <option value="wege">Wegetariańska</option>
-        <option value="wegan">Wegańska</option>
-        <option value="inne">Inne</option>
-      </select>
-      <div class="onboard-actions">
-        <button type="button" class="onboard-skip" id="obSkip1">Pomiń</button>
-        <button type="button" class="primary" id="obNext1">Dalej</button>
-      </div>
-    </div>
-
-    <div class="onboard-step" id="obStep2" hidden>
-      <h2>Alergeny albo czego nie jesz</h2>
-      <p class="onboard-sub">Dodaj tyle, ile potrzebujesz — jeden na raz.</p>
-      <div class="tag-input-row">
-        <input type="text" id="obAllergenInput" maxlength="30" placeholder="np. orzechy">
-        <button type="button" class="tag-add" id="obAllergenAddBtn">Dodaj</button>
-      </div>
-      <div class="tag-list" id="obAllergenTags"></div>
-      <div class="onboard-actions">
-        <button type="button" class="onboard-skip" id="obSkip2">Pomiń</button>
-        <button type="button" class="primary" id="obFinish">Zapisz i przejdź dalej</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -788,13 +760,6 @@
         <div class="free-list" id="freeList"></div>
       </div>
 
-      <div class="card">
-        <h2>Do wypróbowania razem</h2>
-        <div class="idea-list" id="ideaList"></div>
-        <div class="idea-add">
-          <input type="text" id="ideaInput" maxlength="80" placeholder="np. winiarnia z tarasem...">
-          <button type="button" id="ideaAddBtn">Dodaj</button>
-        </div>
       </div>
 
       <details class="card details-card" id="tripFormDetails">
@@ -827,30 +792,6 @@
         <div class="trip-list" id="tripList"></div>
       </details>
 
-      <details class="card details-card">
-        <summary>Preferencje żywieniowe</summary>
-        <form class="trip" id="dietForm">
-          <div>
-            <label for="dietType">Dieta</label>
-            <select id="dietType">
-              <option value="">Bez ograniczeń</option>
-              <option value="wege">Wegetariańska</option>
-              <option value="wegan">Wegańska</option>
-              <option value="inne">Inne</option>
-            </select>
-          </div>
-          <div>
-            <label for="allergenInput">Alergeny / czego nie jeść</label>
-            <div class="tag-input-row">
-              <input type="text" id="allergenInput" maxlength="30" placeholder="np. orzechy">
-              <button type="button" class="tag-add" id="allergenAddBtn">Dodaj</button>
-            </div>
-            <div class="tag-list" id="allergenTags"></div>
-          </div>
-          <button type="submit" class="primary" id="dietSubmitBtn">Zapisz</button>
-        </form>
-        <div class="diet-list" id="dietList"></div>
-      </details>
     </div>
 
     <div class="card calendar-card">
@@ -898,10 +839,7 @@ const firestore = getFirestore(fbApp);
 const tripsCol = collection(firestore, 'trips');
 const profilesCol = collection(firestore, 'profiles');
 const confirmedDocRef = doc(firestore, 'meta', 'confirmed_date');
-const ideasCol = collection(firestore, 'place_ideas');
 let confirmed = null;
-let ideas = [];
-let ideasLoaded = false;
 const PERSON_NAMES = { michal: 'Michał', ona: 'Alicja' };
 
 const POLISH_CITIES = [
@@ -1010,7 +948,6 @@ function setWho(person){
   updateGreeting();
   updateCityPill();
   updateLocPlaceholder();
-  fillDietForm();
   maybeShowOnboarding();
   renderAll();
 }
@@ -1044,12 +981,7 @@ function showOnboarding(){
   document.getElementById('obSkip0').textContent = 'Pomiń';
   document.getElementById('obCityInput').value = '';
   document.getElementById('obCityError').hidden = true;
-  document.getElementById('obDietType').value = '';
-  obPendingAllergens = [];
-  renderObAllergenTags();
   document.getElementById('obStep0').hidden = false;
-  document.getElementById('obStep1').hidden = true;
-  document.getElementById('obStep2').hidden = true;
   document.getElementById('onboardOverlay').hidden = false;
 }
 
@@ -1060,19 +992,10 @@ function showCityOnly(){
   document.getElementById('obCityInput').value = mine && mine.city ? mine.city : '';
   document.getElementById('obCityError').hidden = true;
   document.getElementById('obStep0').hidden = false;
-  document.getElementById('obStep1').hidden = true;
-  document.getElementById('obStep2').hidden = true;
   document.getElementById('onboardOverlay').hidden = false;
 }
 
-let pendingAllergens = [];
 
-function fillDietForm(){
-  const mine = me ? profiles[me] : null;
-  document.getElementById('dietType').value = mine ? (mine.diet || '') : '';
-  pendingAllergens = mine && Array.isArray(mine.allergens) ? [...mine.allergens] : [];
-  renderAllergenTags();
-}
 
 async function geocode(query){
   if(!query) return null;
@@ -1191,63 +1114,6 @@ function applySeasonTheme(){
   if(heading) heading.textContent = `Kalendarz ${s.emoji}`;
 }
 
-function renderAllergenTags(){
-  const el = document.getElementById('allergenTags');
-  el.innerHTML = pendingAllergens.map((a,i)=>`
-    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">${ICON_XMARK}</button></span>
-  `).join('');
-  el.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      pendingAllergens.splice(Number(btn.dataset.i), 1);
-      renderAllergenTags();
-    });
-  });
-}
-
-function addAllergenFromInput(){
-  const input = document.getElementById('allergenInput');
-  const val = input.value.trim();
-  if(!val) return;
-  if(!pendingAllergens.some(a=>a.toLowerCase()===val.toLowerCase())) pendingAllergens.push(val);
-  input.value = '';
-  renderAllergenTags();
-  input.focus();
-}
-
-document.getElementById('allergenAddBtn').addEventListener('click', addAllergenFromInput);
-document.getElementById('allergenInput').addEventListener('keydown', (e)=>{
-  if(e.key==='Enter'){ e.preventDefault(); addAllergenFromInput(); }
-});
-
-let obPendingAllergens = [];
-
-function renderObAllergenTags(){
-  const el = document.getElementById('obAllergenTags');
-  el.innerHTML = obPendingAllergens.map((a,i)=>`
-    <span class="tag-chip">${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Usuń">${ICON_XMARK}</button></span>
-  `).join('');
-  el.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      obPendingAllergens.splice(Number(btn.dataset.i), 1);
-      renderObAllergenTags();
-    });
-  });
-}
-
-function addObAllergenFromInput(){
-  const input = document.getElementById('obAllergenInput');
-  const val = input.value.trim();
-  if(!val) return;
-  if(!obPendingAllergens.some(a=>a.toLowerCase()===val.toLowerCase())) obPendingAllergens.push(val);
-  input.value = '';
-  renderObAllergenTags();
-  input.focus();
-}
-
-document.getElementById('obAllergenAddBtn').addEventListener('click', addObAllergenFromInput);
-document.getElementById('obAllergenInput').addEventListener('keydown', (e)=>{
-  if(e.key==='Enter'){ e.preventDefault(); addObAllergenFromInput(); }
-});
 
 document.getElementById('obNext0').addEventListener('click', async ()=>{
   const btn = document.getElementById('obNext0');
@@ -1263,7 +1129,6 @@ document.getElementById('obNext0').addEventListener('click', async ()=>{
       return;
     }
     document.getElementById('obStep0').hidden = true;
-    document.getElementById('obStep1').hidden = false;
     return;
   }
 
@@ -1277,9 +1142,8 @@ document.getElementById('obNext0').addEventListener('click', async ()=>{
   }
 
   const existing = profiles[me] || {};
-  const profile = { person: me, diet: existing.diet || '', allergens: existing.allergens || [], city, lat: geo.lat, lon: geo.lon, updatedAt: Date.now() };
+  const profile = { person: me, city, lat: geo.lat, lon: geo.lon, updatedAt: Date.now() };
   profiles[me] = profile;
-  renderDiets();
   renderDistance();
   updateCityPill();
   updateLocPlaceholder();
@@ -1292,7 +1156,6 @@ document.getElementById('obNext0').addEventListener('click', async ()=>{
     return;
   }
   document.getElementById('obStep0').hidden = true;
-  document.getElementById('obStep1').hidden = false;
 });
 document.getElementById('obSkip0').addEventListener('click', finishOnboarding);
 document.getElementById('changeCityBtn').addEventListener('click', ()=>{
@@ -1300,28 +1163,6 @@ document.getElementById('changeCityBtn').addEventListener('click', ()=>{
   showCityOnly();
 });
 
-document.getElementById('obNext1').addEventListener('click', ()=>{
-  document.getElementById('obStep1').hidden = true;
-  document.getElementById('obStep2').hidden = false;
-  document.getElementById('obAllergenInput').focus();
-});
-document.getElementById('obSkip1').addEventListener('click', finishOnboarding);
-document.getElementById('obSkip2').addEventListener('click', finishOnboarding);
-
-document.getElementById('obFinish').addEventListener('click', async ()=>{
-  addObAllergenFromInput();
-  const diet = document.getElementById('obDietType').value;
-  const allergens = [...obPendingAllergens];
-  const existing = profiles[me] || {};
-  const profile = { person: me, diet, allergens, city: existing.city || null, lat: existing.lat ?? null, lon: existing.lon ?? null, updatedAt: Date.now() };
-  profiles[me] = profile;
-  renderDiets();
-  renderDistance();
-  fillDietForm();
-  finishOnboarding();
-  try{ await setDoc(doc(firestore, 'profiles', me), profile); }
-  catch(err){ setStatus('Nie zapisano preferencji na serwerze — możesz je poprawić niżej.'); }
-});
 
 document.getElementById('btn-michal').addEventListener('click', ()=>setWho('michal'));
 document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
@@ -1484,60 +1325,6 @@ function renderWeekStrip(){
   }
 }
 
-function renderIdeas(){
-  const el = document.getElementById('ideaList');
-  if(!ideasLoaded){
-    el.innerHTML = '<div class="empty">Wczytywanie…</div>';
-  }else if(ideas.length === 0){
-    el.innerHTML = '<div class="empty">Nikt jeszcze nic nie dodał.</div>';
-  }else{
-    const sorted = [...ideas].sort((a,b)=> (a.done?1:0) - (b.done?1:0) || a.createdAt - b.createdAt);
-    el.innerHTML = sorted.map(idea => `
-      <div class="idea-row">
-        <button type="button" class="idea-check" data-id="${idea.id}" data-done="${!!idea.done}" aria-label="Oznacz jako wypróbowane" ${me ? '' : 'disabled'}></button>
-        <div class="idea-name" data-done="${!!idea.done}">${escapeHtml(idea.name)}</div>
-        <div class="idea-added">${idea.addedBy ? `dodał${idea.addedBy === 'ona' ? 'a' : ''} ${PERSON_NAMES[idea.addedBy] || idea.addedBy}` : ''}</div>
-        <button type="button" class="idea-del" data-id="${idea.id}" aria-label="Usuń" ${me ? '' : 'disabled'}>${ICON_XMARK}</button>
-      </div>
-    `).join('');
-    el.querySelectorAll('.idea-check').forEach(btn=>{
-      btn.addEventListener('click', ()=>toggleIdea(btn.dataset.id));
-    });
-    el.querySelectorAll('.idea-del').forEach(btn=>{
-      btn.addEventListener('click', ()=>deleteIdea(btn.dataset.id));
-    });
-  }
-  document.getElementById('ideaAddBtn').disabled = !me;
-  document.getElementById('ideaInput').disabled = !me;
-}
-
-async function addIdea(){
-  const input = document.getElementById('ideaInput');
-  const name = input.value.trim();
-  if(!name || !me) return;
-  const id = 'idea_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-  const idea = { id, name, addedBy: me, done: false, createdAt: Date.now() };
-  input.value = '';
-  try{ await setDoc(doc(firestore, 'place_ideas', id), idea); }
-  catch(e){ setStatus('Nie udało się dodać — spróbuj ponownie.'); }
-}
-
-async function toggleIdea(id){
-  const idea = ideas.find(i=>i.id === id);
-  if(!idea) return;
-  try{ await setDoc(doc(firestore, 'place_ideas', id), { done: !idea.done }, { merge: true }); }
-  catch(e){}
-}
-
-async function deleteIdea(id){
-  try{ await deleteDoc(doc(firestore, 'place_ideas', id)); }
-  catch(e){}
-}
-
-document.getElementById('ideaAddBtn').addEventListener('click', addIdea);
-document.getElementById('ideaInput').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter'){ e.preventDefault(); addIdea(); }
-});
 
 let pendingConfirmYmd = null;
 
@@ -2043,37 +1830,10 @@ function renderAll(){
   renderWeekStrip();
   renderPlannerHero();
   renderCalendar();
-  renderDiets();
   renderConfirmed();
   renderDistance();
-  renderIdeas();
 }
 
-function renderDiets(){
-  const el = document.getElementById('dietList');
-  const keys = Object.keys(PERSON_NAMES).filter(k=>profiles[k]);
-  if(keys.length===0){
-    el.innerHTML = '<div class="empty">Nikt jeszcze nie wpisał swoich preferencji.</div>';
-    return;
-  }
-  el.innerHTML = keys.map(k=>{
-    const p = profiles[k];
-    const tagClass = p.diet==='wegan' ? 'wegan' : (p.diet==='wege' ? 'wege' : (p.diet==='inne' ? 'inne' : ''));
-    const tag = p.diet ? `<span class="diet-tag ${tagClass}">${DIET_LABELS[p.diet] || p.diet}</span>` : '';
-    const allergenList = Array.isArray(p.allergens) ? p.allergens : (p.allergens ? [p.allergens] : []);
-    const allergenHtml = allergenList.length
-      ? `<div class="diet-allergen-tags">${allergenList.map(a=>`<span class="diet-allergen-tag">${escapeHtml(a)}</span>`).join('')}</div>`
-      : '';
-    return `
-      <div class="diet-item">
-        <div class="diet-meta">
-          <div class="diet-name">${PERSON_NAMES[k]}</div>
-          ${tag}
-          ${allergenHtml}
-        </div>
-      </div>`;
-  }).join('');
-}
 
 async function deleteTrip(id){
   trips = trips.filter(t=>t.id!==id);
@@ -2128,20 +1888,6 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
 
 document.getElementById('cancelEditBtn').addEventListener('click', cancelEditTrip);
 
-document.getElementById('dietForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
-  addAllergenFromInput();
-  const diet = document.getElementById('dietType').value;
-  const allergens = [...pendingAllergens];
-  const existing = profiles[me] || {};
-  const profile = { person: me, diet, allergens, city: existing.city || null, lat: existing.lat ?? null, lon: existing.lon ?? null, updatedAt: Date.now() };
-  profiles[me] = profile;
-  renderDiets();
-  renderDistance();
-  try{ await setDoc(doc(firestore, 'profiles', me), profile); setStatus('Zapisano.'); }
-  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
-});
 
 function loadCache(){
   try{
@@ -2151,8 +1897,6 @@ function loadCache(){
     if(p) profiles = JSON.parse(p);
     const c = localStorage.getItem('kawa_cache_confirmed');
     if(c) confirmed = JSON.parse(c);
-    const i = localStorage.getItem('kawa_cache_ideas');
-    if(i) ideas = JSON.parse(i);
   }catch(e){}
 }
 
@@ -2187,9 +1931,7 @@ function init(){
     snap.docs.forEach(d=>{ profiles[d.id] = d.data(); });
     profilesLoaded = true;
     saveCache('kawa_cache_profiles', profiles);
-    renderDiets();
     renderDistance();
-    fillDietForm();
     updateCityPill();
     updateLocPlaceholder();
     if(pendingOnboardCheck){ pendingOnboardCheck = false; maybeShowOnboarding(); }
@@ -2213,15 +1955,6 @@ function init(){
     renderCalendar();
     renderPlannerHero();
     renderWeekStrip();
-  }, err=>{
-    setOffline(true);
-  });
-  onSnapshot(ideasCol, snap=>{
-    setOffline(false);
-    ideas = snap.docs.map(d=>d.data());
-    ideasLoaded = true;
-    saveCache('kawa_cache_ideas', ideas);
-    renderIdeas();
   }, err=>{
     setOffline(true);
   });
