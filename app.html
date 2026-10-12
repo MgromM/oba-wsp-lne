@@ -726,6 +726,17 @@
               <input type="date" id="end" required>
             </div>
           </div>
+          <div class="row2">
+            <div>
+              <label for="timeFrom">Od godziny</label>
+              <input type="time" id="timeFrom">
+            </div>
+            <div>
+              <label for="timeTo">Do godziny</label>
+              <input type="time" id="timeTo">
+            </div>
+          </div>
+          <p class="hint" style="font-size:12.5px;color:var(--ink-soft);margin:0">Puste godziny = zajęty cały dzień. Z godzinami dzień zostaje wolny, a zajęte godziny widać po kliknięciu w dzień.</p>
           <div class="form-btn-row">
             <button type="submit" class="primary" id="submitBtn">Dodaj</button>
             <button type="button" class="cancel-edit" id="cancelEditBtn" hidden>Anuluj</button>
@@ -898,8 +909,17 @@ document.getElementById('btn-michal').addEventListener('click', ()=>setWho('mich
 document.getElementById('btn-ona').addEventListener('click', ()=>setWho('ona'));
 if(me) setWho(me);
 
+function hasHours(t){ return !!(t.fromTime && t.toTime); }
+
 function isBusy(person, ymd){
-  return trips.some(t => t.person===person && ymd >= t.start && ymd <= t.end);
+  return trips.some(t => t.person===person && !hasHours(t) && ymd >= t.start && ymd <= t.end);
+}
+
+function busyHours(person, ymd){
+  return trips
+    .filter(t => t.person===person && hasHours(t) && ymd >= t.start && ymd <= t.end)
+    .map(t => `${t.fromTime}–${t.toTime}`)
+    .sort();
 }
 
 function renderTripList(){
@@ -913,7 +933,7 @@ function renderTripList(){
     <div class="trip-item">
       <span class="dot ${t.person}"></span>
       <div class="trip-meta">
-        <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}</div>
+        <div class="trip-dates">${fmt(parse(t.start))} – ${fmt(parse(t.end))}${hasHours(t) ? ` · ${t.fromTime}–${t.toTime}` : ''}</div>
         ${t.loc ? `<div class="trip-loc">${escapeHtml(t.loc)}</div>` : ''}
       </div>
       ${t.person===me ? `<button class="edit" data-id="${t.id}" aria-label="Edytuj">${ICON_PENCIL}</button>` : ''}
@@ -936,6 +956,8 @@ function startEditTrip(id){
   editingTripId = id;
   document.getElementById('start').value = t.start;
   document.getElementById('end').value = t.end;
+  document.getElementById('timeFrom').value = t.fromTime || '';
+  document.getElementById('timeTo').value = t.toTime || '';
   document.getElementById('submitBtn').textContent = 'Zapisz zmiany';
   document.getElementById('cancelEditBtn').hidden = false;
   const details = document.getElementById('tripFormDetails');
@@ -1357,8 +1379,9 @@ function showDayPopover(dayEl){
   const rows = [];
   ['michal','ona'].forEach(p=>{
     const busy = isBusy(p, ymd);
-    const t = busy ? trips.find(tr=>tr.person===p && ymd>=tr.start && ymd<=tr.end) : null;
-    const locText = busy ? (p==='ona' ? 'zajęta' : 'zajęty') : (p==='ona' ? 'wolna' : 'wolny');
+    const hrs = busyHours(p, ymd);
+    const locText = busy ? (p==='ona' ? 'zajęta' : 'zajęty')
+      : (hrs.length ? `${p==='ona' ? 'zajęta' : 'zajęty'} ${hrs.join(', ')}` : (p==='ona' ? 'wolna' : 'wolny'));
     rows.push(`<div class="day-popover-row"><span class="dot ${p}"></span><span class="day-popover-name">${PERSON_NAMES[p]}:</span><span class="day-popover-loc">${locText}</span></div>`);
   });
   const today = todayStr();
@@ -1453,7 +1476,11 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   const start = document.getElementById('start').value;
   const end = document.getElementById('end').value;
   const loc = '';
+  const fromTime = document.getElementById('timeFrom').value;
+  const toTime = document.getElementById('timeTo').value;
   if(!start || !end){ setStatus('Podaj obie daty.'); return; }
+  if(!!fromTime !== !!toTime){ setStatus('Podaj obie godziny albo żadnej.'); return; }
+  if(fromTime && start === end && toTime <= fromTime){ setStatus('Godzina "do" musi być po godzinie "od".'); return; }
   if(end < start){ setStatus('Data "do" musi być po dacie "od".'); return; }
 
   if(editingTripId){
@@ -1465,7 +1492,7 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
       return;
     }
     const geo = loc && loc !== existing.loc ? await geocode(loc) : (loc === existing.loc ? { lat: existing.lat, lon: existing.lon } : null);
-    const trip = { id, person: me, start, end, loc, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, createdAt: existing.createdAt };
+    const trip = { id, person: me, start, end, fromTime: fromTime || null, toTime: toTime || null, loc, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, createdAt: existing.createdAt };
     trips = trips.map(t=>t.id===id ? trip : t);
     renderAll();
     cancelEditTrip();
@@ -1476,7 +1503,7 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
 
   const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
   const geo = loc ? await geocode(loc) : null;
-  const trip = { id, person: me, start, end, loc, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, createdAt: Date.now() };
+  const trip = { id, person: me, start, end, fromTime: fromTime || null, toTime: toTime || null, loc, lat: geo ? geo.lat : null, lon: geo ? geo.lon : null, createdAt: Date.now() };
   trips.push(trip);
   renderAll();
   e.target.reset();
