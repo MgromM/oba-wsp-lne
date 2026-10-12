@@ -714,29 +714,22 @@
       </div>
 
       <details class="card details-card" id="tripFormDetails">
-        <summary>Dodaj wyjazd / zajętość</summary>
+        <summary>Dodaj zajętość (dzień i godziny)</summary>
         <form class="trip" id="tripForm">
-          <div class="row2">
-            <div>
-              <label for="start">Od</label>
-              <input type="date" id="start" required>
-            </div>
-            <div>
-              <label for="end">Do</label>
-              <input type="date" id="end" required>
-            </div>
+          <div>
+            <label for="start">Dzień</label>
+            <input type="date" id="start" required>
           </div>
           <div class="row2">
             <div>
-              <label for="timeFrom">Od godziny</label>
-              <input type="time" id="timeFrom">
+              <label for="timeFrom">Zajęty od godziny</label>
+              <input type="time" id="timeFrom" required>
             </div>
             <div>
-              <label for="timeTo">Do godziny</label>
-              <input type="time" id="timeTo">
+              <label for="timeTo">do godziny</label>
+              <input type="time" id="timeTo" required>
             </div>
           </div>
-          <p class="hint" style="font-size:12.5px;color:var(--ink-soft);margin:0">Puste godziny = zajęty cały dzień. Z godzinami dzień zostaje wolny, a zajęte godziny widać po kliknięciu w dzień.</p>
           <div class="form-btn-row">
             <button type="submit" class="primary" id="submitBtn">Dodaj</button>
             <button type="button" class="cancel-edit" id="cancelEditBtn" hidden>Anuluj</button>
@@ -955,7 +948,6 @@ function startEditTrip(id){
   if(!t) return;
   editingTripId = id;
   document.getElementById('start').value = t.start;
-  document.getElementById('end').value = t.end;
   document.getElementById('timeFrom').value = t.fromTime || '';
   document.getElementById('timeTo').value = t.toTime || '';
   document.getElementById('submitBtn').textContent = 'Zapisz zmiany';
@@ -1503,14 +1495,13 @@ document.getElementById('tripForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   if(!me){ setStatus('Najpierw wybierz, kim jesteś (u góry).'); return; }
   const start = document.getElementById('start').value;
-  const end = document.getElementById('end').value;
+  const end = start;
   const loc = '';
   const fromTime = document.getElementById('timeFrom').value;
   const toTime = document.getElementById('timeTo').value;
-  if(!start || !end){ setStatus('Podaj obie daty.'); return; }
-  if(!!fromTime !== !!toTime){ setStatus('Podaj obie godziny albo żadnej.'); return; }
-  if(fromTime && start === end && toTime <= fromTime){ setStatus('Godzina "do" musi być po godzinie "od".'); return; }
-  if(end < start){ setStatus('Data "do" musi być po dacie "od".'); return; }
+  if(!start){ setStatus('Wybierz dzień.'); return; }
+  if(!fromTime || !toTime){ setStatus('Podaj godziny od i do.'); return; }
+  if(toTime <= fromTime){ setStatus('Godzina "do" musi być po godzinie "od".'); return; }
 
   if(editingTripId){
     const id = editingTripId;
