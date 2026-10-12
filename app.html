@@ -973,13 +973,41 @@ function cancelEditTrip(){
 }
 
 const FREE_SEARCH_DAYS = 365;
+const DAY_FROM = 9*60, DAY_TO = 21*60, MIN_WINDOW = 60;
+
+function toMin(hm){ const [h,m] = hm.split(':').map(Number); return h*60+m; }
+function fromMin(n){ return String(Math.floor(n/60)).padStart(2,'0') + ':' + String(n%60).padStart(2,'0'); }
+
+// Hours of the day (9:00-21:00) when both are free, as [startMin, endMin] windows of at least an hour.
+function freeWindows(ymd){
+  const busy = [];
+  ['michal','ona'].forEach(p=>{
+    trips.forEach(t=>{
+      if(t.person===p && hasHours(t) && ymd>=t.start && ymd<=t.end) busy.push([toMin(t.fromTime), toMin(t.toTime)]);
+    });
+  });
+  busy.sort((a,b)=>a[0]-b[0]);
+  const out = [];
+  let cur = DAY_FROM;
+  busy.forEach(([a,b])=>{
+    if(a - cur >= MIN_WINDOW) out.push([cur, Math.min(a, DAY_TO)]);
+    cur = Math.max(cur, b);
+  });
+  if(DAY_TO - cur >= MIN_WINDOW) out.push([cur, DAY_TO]);
+  return out;
+}
+
+function windowsText(ymd){
+  const w = freeWindows(ymd);
+  return w.length ? w.map(([a,b])=>`${fromMin(a)}–${fromMin(b)}`).join(', ') : '';
+}
 
 function nextFreeDates(limit){
   const out = [];
   let d = parse(todayStr());
   for(let i=0; i<FREE_SEARCH_DAYS && out.length<limit; i++){
     const ymd = dateStr(d);
-    if(!isBusy('michal', ymd) && !isBusy('ona', ymd)) out.push(new Date(d));
+    if(!isBusy('michal', ymd) && !isBusy('ona', ymd) && freeWindows(ymd).length) out.push(new Date(d));
     d.setDate(d.getDate()+1);
   }
   return out;
@@ -1003,7 +1031,7 @@ function renderFreeList(){
     let label = 'Zaproponuj ten dzień';
     if(isThis) label = confirmed.status === 'proposed' ? 'Propozycja wysłana' : 'Wybrano ✓';
     return `<div class="free-item">
-      <div class="free-item-dates"><span>${d.toLocaleDateString('pl-PL',{weekday:'long'})}</span><span>${fmt(d)}</span></div>
+      <div class="free-item-dates"><span>${d.toLocaleDateString('pl-PL',{weekday:'long'})}</span><span>${fmt(d)} · ${windowsText(ymd)}</span></div>
       <button class="pick-btn" data-ymd="${ymd}" ${!me || hasActive ? 'disabled' : ''}>${label}</button>
     </div>`;
   }).join('');
@@ -1022,9 +1050,9 @@ function renderPlannerHero(){
   document.getElementById('plannerHeroDate').textContent =
     `${next.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(next)}`;
   const diffDays = Math.round((next - parse(todayStr())) / 86400000);
-  document.getElementById('plannerHeroMeta').textContent = diffDays === 0
-    ? 'Dziś jesteście oboje wolni.'
-    : `Za ${diffDays} ${diffDays === 1 ? 'dzień' : 'dni'} jesteście oboje wolni.`;
+  document.getElementById('plannerHeroMeta').textContent = (diffDays === 0
+    ? 'Dziś jesteście oboje wolni'
+    : `Za ${diffDays} ${diffDays === 1 ? 'dzień' : 'dni'} jesteście oboje wolni`) + `: ${windowsText(ymd)}`;
   const btn = document.getElementById('plannerHeroBtn');
   btn.disabled = !me;
   btn.onclick = ()=>proposeDate(ymd, null, null, null);
@@ -1386,6 +1414,7 @@ function showDayPopover(dayEl){
   });
   const today = todayStr();
   const bothFree = !isBusy('michal', ymd) && !isBusy('ona', ymd);
+  if(bothFree && windowsText(ymd)) rows.push(`<div class="day-popover-row"><span class="day-popover-name">Wspólnie wolni:</span><span class="day-popover-loc">${windowsText(ymd)}</span></div>`);
   const canPropose = me && bothFree && ymd >= today && !confirmed;
   const actionRow = canPropose
     ? `<button type="button" class="day-popover-propose" id="dayPopoverPropose">Zaproponuj ten dzień →</button>`
