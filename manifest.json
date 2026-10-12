@@ -1,6 +1,6 @@
 {
-  "name": "Termin na kolację",
-  "short_name": "Kolacja",
+  "name": "Termin na kawę",
+  "short_name": "Kawa",
   "start_url": "/oba-wsp-lne/",
   "display": "standalone",
   "background_color": "#faf6f0",

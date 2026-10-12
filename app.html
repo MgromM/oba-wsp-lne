@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<title>Termin na kolację</title>
+<title>Termin na kawę</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="icons/favicon-32-v2.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon-v2.png">
@@ -410,7 +410,7 @@
   }
   .day .num{ font-weight:600; }
   /* "free" (nobody busy) stays visually quiet — a small utensil mark, no fill —
-     so the gold accent stays reserved for an actual confirmed/proposed dinner
+     so the gold accent stays reserved for an actual confirmed/proposed coffee
      and doesn't get lost among every other ordinary free day in the month. */
   .day.free .num::after{
     content:'';
@@ -526,7 +526,6 @@
     color:var(--ink-soft);
     opacity:.35;
   }
-  .footer-easter-egg{
     font-size:17px;
     opacity:.35;
     text-decoration:none;
@@ -534,7 +533,6 @@
     transition:opacity .2s, filter .2s, transform .2s;
     padding:8px;
   }
-  .footer-easter-egg:hover, .footer-easter-egg:focus-visible{
     opacity:1;
     filter:none;
     transform:scale(1.15);
@@ -688,7 +686,7 @@
 
     <div class="onboard-step" id="obStep1" hidden>
       <h2>Zanim zaczniesz — jaka dieta?</h2>
-      <p class="onboard-sub">To pomoże wybrać restaurację, w której oboje coś zjecie.</p>
+      <p class="onboard-sub">To pomoże wybrać kawiarnię, w której oboje coś zamówicie.</p>
       <select id="obDietType">
         <option value="">Bez ograniczeń</option>
         <option value="wege">Wegetariańska</option>
@@ -721,7 +719,7 @@
   <div class="onboard-card">
     <div class="onboard-step">
       <div class="onboard-eyebrow">Ostatni krok</div>
-      <h2>W jakim mieście proponujesz kolację?</h2>
+      <h2>W jakim mieście proponujesz kawę?</h2>
       <p class="onboard-sub">Druga osoba zobaczy tę propozycję w appce i będzie mogła ją zaakceptować.</p>
       <div class="city-combo">
         <input type="text" id="confirmCityInput" maxlength="60" placeholder="Wpisz albo wybierz miasto" autocomplete="off">
@@ -738,7 +736,7 @@
 
 <div class="wrap">
   <header>
-    <h1>Termin na kolację</h1>
+    <h1>Termin na kawę</h1>
     <p class="greeting" id="greeting" hidden></p>
   </header>
 
@@ -749,7 +747,7 @@
   <div class="whoami">
     <span>Jesteś:</span>
     <button class="who-btn" data-person="michal" id="btn-michal">Michał</button>
-    <button class="who-btn" data-person="ona" id="btn-ona">Aga</button>
+    <button class="who-btn" data-person="ona" id="btn-ona">Alicja</button>
     <button type="button" class="city-pill" id="changeCityBtn" hidden><span class="icon" style="width:11px;height:11px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.686-7-11a7 7 0 0 1 14 0c0 5.314-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span> Ustaw miasto</button>
   </div>
 
@@ -766,7 +764,7 @@
   </div>
 
   <div class="card confirmed-card" id="confirmedCard" hidden>
-    <h2>Zaplanowana kolacja</h2>
+    <h2>Zaplanowana kawa</h2>
     <div class="confirmed-body" id="confirmedBody"></div>
   </div>
 
@@ -867,9 +865,9 @@
       <div class="legend">
         <span><i class="free"></i>oboje wolni</span>
         <span><i class="michal"></i>Michał zajęty</span>
-        <span><i class="ona"></i>Aga zajęta</span>
+        <span><i class="ona"></i>Alicja zajęta</span>
         <span><i class="both"></i>oboje zajęci</span>
-        <span><i class="planned"></i>zaplanowana / proponowana kolacja</span>
+        <span><i class="planned"></i>zaplanowana / proponowana kawa</span>
         <span><i class="today"></i>dziś</span>
       </div>
     </div>
@@ -877,7 +875,6 @@
 
   <footer class="page-footer">
     <span class="footer-hint">tutaj nic ciekawego nie ma →</span>
-    <a href="game/index.html" class="footer-easter-egg" title="Nudzi się?">🏀</a>
   </footer>
 </div>
 
@@ -905,7 +902,7 @@ const ideasCol = collection(firestore, 'place_ideas');
 let confirmed = null;
 let ideas = [];
 let ideasLoaded = false;
-const PERSON_NAMES = { michal: 'Michał', ona: 'Aga' };
+const PERSON_NAMES = { michal: 'Michał', ona: 'Alicja' };
 
 const POLISH_CITIES = [
   'Warszawa','Kraków','Łódź','Wrocław','Poznań','Gdańsk','Szczecin','Bydgoszcz','Lublin','Białystok',
@@ -956,7 +953,7 @@ let trips = [];
 let editingTripId = null;
 let tripsLoaded = false;
 let profiles = {};
-let me = localStorage.getItem('kolacja_who') || null;
+let me = localStorage.getItem('kawa_who') || null;
 let confirmedCountdownInterval = null;
 let viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0);
 
@@ -1007,7 +1004,7 @@ function updateLocPlaceholder(){
 function setWho(person){
   if(editingTripId) cancelEditTrip();
   me = person;
-  localStorage.setItem('kolacja_who', person);
+  localStorage.setItem('kawa_who', person);
   document.getElementById('btn-michal').setAttribute('data-active', person==='michal');
   document.getElementById('btn-ona').setAttribute('data-active', person==='ona');
   updateGreeting();
@@ -1018,7 +1015,7 @@ function setWho(person){
   renderAll();
 }
 
-function onboardKey(person){ return 'kolacja_onboarded_' + person; }
+function onboardKey(person){ return 'kawa_onboarded_' + person; }
 
 let profilesLoaded = false;
 let pendingOnboardCheck = false;
@@ -1475,7 +1472,7 @@ function renderWeekStrip(){
     document.getElementById('weekStripCaption').innerHTML = confirmed.date >= today && confirmed.date <= dateStr(days[6])
       ? (confirmed.status === 'proposed'
           ? `Propozycja czeka na odpowiedź: <b>${parse(confirmed.date).toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</b>.`
-          : `Zaplanowana kolacja: <b>${parse(confirmed.date).toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</b>.`)
+          : `Zaplanowana kawa: <b>${parse(confirmed.date).toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</b>.`)
       : 'Macie już zaplanowany termin — zobacz kartę powyżej.';
   }else{
     const freeDayNames = days
@@ -1596,17 +1593,17 @@ function buildIcs(confirmedDate){
   const endsAt = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 21, 0, 0);
   const pad = n => String(n).padStart(2, '0');
   const toIcsDate = dt => `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
-  const uid = `kolacja-${confirmedDate.date}@oba-wsp-lne`;
+  const uid = `kawa-${confirmedDate.date}@oba-wsp-lne`;
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//oba-wsp-lne//kolacja//PL',
+    'PRODID:-//oba-wsp-lne//kawa//PL',
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${toIcsDate(new Date())}`,
     `DTSTART:${toIcsDate(startsAt)}`,
     `DTEND:${toIcsDate(endsAt)}`,
-    'SUMMARY:Kolacja',
+    'SUMMARY:Kawa',
     `DESCRIPTION:Wybrane przez ${PERSON_NAMES[confirmedDate.confirmedBy] || confirmedDate.confirmedBy}`,
     'END:VEVENT',
     'END:VCALENDAR'
@@ -1619,7 +1616,7 @@ function exportConfirmedToIcs(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `kolacja-${confirmed.date}.ics`;
+  a.download = `kawa-${confirmed.date}.ics`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1643,7 +1640,7 @@ function renderConfirmed(){
     const iAmProposer = me && confirmed.proposedBy === me;
     const heading = iAmProposer
       ? `Czekamy na odpowiedź ${PERSON_NAMES[otherPerson(me)]}`
-      : `${PERSON_NAMES[confirmed.proposedBy] || confirmed.proposedBy} proponuje kolację`;
+      : `${PERSON_NAMES[confirmed.proposedBy] || confirmed.proposedBy} proponuje kawę`;
     body.innerHTML = `
       <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
       <div class="confirmed-meta">${heading}${confirmed.city ? ` · ${escapeHtml(confirmed.city)}` : ''}</div>
@@ -1983,7 +1980,7 @@ function showDayPopover(dayEl){
   const actionRow = canPropose
     ? `<button type="button" class="day-popover-propose" id="dayPopoverPropose">Zaproponuj ten dzień →</button>`
     : (confirmed && confirmed.date === ymd
-        ? `<div class="day-popover-status">${confirmed.status === 'proposed' ? 'Propozycja czeka na odpowiedź' : 'Tu jest wasza kolacja 🎉'}</div>`
+        ? `<div class="day-popover-status">${confirmed.status === 'proposed' ? 'Propozycja czeka na odpowiedź' : 'Tu jest wasza kawa 🎉'}</div>`
         : '');
   pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">${ICON_XMARK}</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${distanceRow}${actionRow}`;
   pop.hidden = false;
@@ -2148,13 +2145,13 @@ document.getElementById('dietForm').addEventListener('submit', async (e)=>{
 
 function loadCache(){
   try{
-    const t = localStorage.getItem('kolacja_cache_trips');
+    const t = localStorage.getItem('kawa_cache_trips');
     if(t) trips = JSON.parse(t);
-    const p = localStorage.getItem('kolacja_cache_profiles');
+    const p = localStorage.getItem('kawa_cache_profiles');
     if(p) profiles = JSON.parse(p);
-    const c = localStorage.getItem('kolacja_cache_confirmed');
+    const c = localStorage.getItem('kawa_cache_confirmed');
     if(c) confirmed = JSON.parse(c);
-    const i = localStorage.getItem('kolacja_cache_ideas');
+    const i = localStorage.getItem('kawa_cache_ideas');
     if(i) ideas = JSON.parse(i);
   }catch(e){}
 }
@@ -2174,7 +2171,7 @@ function init(){
     setOffline(false);
     trips = snap.docs.map(d=>d.data());
     tripsLoaded = true;
-    saveCache('kolacja_cache_trips', trips);
+    saveCache('kawa_cache_trips', trips);
     if(editingTripId && !trips.some(t=>t.id===editingTripId)){
       setStatus('Edytowany termin został w międzyczasie usunięty.');
       cancelEditTrip();
@@ -2189,7 +2186,7 @@ function init(){
     profiles = {};
     snap.docs.forEach(d=>{ profiles[d.id] = d.data(); });
     profilesLoaded = true;
-    saveCache('kolacja_cache_profiles', profiles);
+    saveCache('kawa_cache_profiles', profiles);
     renderDiets();
     renderDistance();
     fillDietForm();
@@ -2204,7 +2201,7 @@ function init(){
   onSnapshot(confirmedDocRef, snap=>{
     setOffline(false);
     confirmed = snap.exists() ? snap.data() : null;
-    saveCache('kolacja_cache_confirmed', confirmed);
+    saveCache('kawa_cache_confirmed', confirmed);
     const newStatus = confirmed ? confirmed.status : null;
     if(!firstConfirmedSnapshot && newStatus === 'confirmed' && previousConfirmedStatus !== 'confirmed'){
       playFireworks();
@@ -2223,7 +2220,7 @@ function init(){
     setOffline(false);
     ideas = snap.docs.map(d=>d.data());
     ideasLoaded = true;
-    saveCache('kolacja_cache_ideas', ideas);
+    saveCache('kawa_cache_ideas', ideas);
     renderIdeas();
   }, err=>{
     setOffline(true);
@@ -2238,7 +2235,7 @@ setInterval(updateGreeting, 5*60*1000);
 function initInstallBanner(){
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   if(isStandalone) return;
-  if(localStorage.getItem('kolacja_install_dismissed')) return;
+  if(localStorage.getItem('kawa_install_dismissed')) return;
 
   const banner = document.getElementById('installBanner');
   const text = document.getElementById('installBannerText');
@@ -2269,7 +2266,7 @@ function initInstallBanner(){
   });
 
   dismissBtn.addEventListener('click', ()=>{
-    localStorage.setItem('kolacja_install_dismissed', '1');
+    localStorage.setItem('kawa_install_dismissed', '1');
     banner.hidden = true;
   });
 
