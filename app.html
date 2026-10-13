@@ -6,53 +6,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="icons/favicon-32-v2.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon-v2.png">
-<meta name="theme-color" content="#2f6f62">
+<meta name="theme-color" content="#fbefdc">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
 <style>
-  :root{
-    --paper:#faf6f0;
-    --paper-raised:#ffffff;
-    --ink:#2b2630;
-    --ink-soft:#6b6270;
-    --line:#e7ddd0;
-    --michal:#2f6f62;
-    --michal-bg:#e3efe9;
-    --ona:#b8365f;
-    --ona-bg:#f8e6ec;
-    --both-bg:#fff2c7;
-    --both-line:#d8ab2b;
-    --danger:#b8365f;
-    --shadow: 0 1px 2px rgba(43,38,48,.06), 0 6px 20px rgba(43,38,48,.06);
+    :root{
+    --paper:#fbefdc;
+    --paper-raised:#fffaf1;
+    --ink:#3a2619;
+    --ink-soft:#7d6250;
+    --line:#ecd3b2;
+    --michal:#5d7a35;
+    --michal-bg:#e9efd6;
+    --ona:#b5462a;
+    --ona-bg:#fbe3d6;
+    --both-bg:#ffe2a0;
+    --both-line:#d98a1e;
+    --danger:#b5462a;
+    --shadow: 0 1px 2px rgba(58,38,25,.08), 0 6px 20px rgba(58,38,25,.08);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --paper:#1c1a1f;
-      --paper-raised:#262330;
-      --ink:#ede8f0;
-      --ink-soft:#a89fb0;
-      --line:#3a3542;
-      --michal:#6fcbb3;
-      --michal-bg:#22332e;
-      --ona:#f292b3;
-      --ona-bg:#3a2530;
-      --both-bg:#4a3d1a;
-      --both-line:#c9a331;
+      --paper:#201510;
+      --paper-raised:#2d1f16;
+      --ink:#f4e5d0;
+      --ink-soft:#c2a78c;
+      --line:#4d3827;
+      --michal:#a9c46f;
+      --michal-bg:#2b3320;
+      --ona:#f08a5d;
+      --ona-bg:#40251a;
+      --both-bg:#523b14;
+      --both-line:#e0a23a;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     }
   }
   :root[data-theme="dark"]{
-    --paper:#1c1a1f;
-    --paper-raised:#262330;
-    --ink:#ede8f0;
-    --ink-soft:#a89fb0;
-    --line:#3a3542;
-    --michal:#6fcbb3;
-    --michal-bg:#22332e;
-    --ona:#f292b3;
-    --ona-bg:#3a2530;
-    --both-bg:#4a3d1a;
-    --both-line:#c9a331;
+    --paper:#201510;
+      --paper-raised:#2d1f16;
+      --ink:#f4e5d0;
+      --ink-soft:#c2a78c;
+      --line:#4d3827;
+      --michal:#a9c46f;
+      --michal-bg:#2b3320;
+      --ona:#f08a5d;
+      --ona-bg:#40251a;
+      --both-bg:#523b14;
+      --both-line:#e0a23a;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
   }
 
@@ -67,12 +67,18 @@
     font-size:15px;
     line-height:1.5;
   }
+  .autumn-bg{ position:fixed; left:0; right:0; bottom:0; z-index:0; pointer-events:none; display:flex; justify-content:center; }
+  .autumn-bg svg{ width:min(100%,1100px); min-width:560px; height:auto; max-height:50vh; opacity:.85; }
+  .wrap{ position:relative; z-index:1; }
+  body{ background:linear-gradient(180deg,var(--paper) 0%, var(--paper) 55%, #f6dcae 100%); background-attachment:fixed; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body{ background:linear-gradient(180deg,var(--paper) 0%, var(--paper) 55%, #3a2412 100%); background-attachment:fixed; } }
+  :root[data-theme="dark"] body{ background:linear-gradient(180deg,var(--paper) 0%, var(--paper) 55%, #3a2412 100%); background-attachment:fixed; }
   .wrap{
     max-width:980px;
     margin:0 auto;
     padding:20px 14px 48px;
   }
-  @media (min-width:640px){ .wrap{ padding:36px 20px 80px; } }
+  @media (min-width:560px){ .wrap{ padding:36px 20px 80px; } }
   header{
     display:flex;
     flex-direction:column;
@@ -150,9 +156,9 @@
     box-shadow:var(--shadow);
     padding:14px 16px;
   }
-  @media (min-width:640px){ .card{ padding:20px; } }
+  @media (min-width:560px){ .card{ padding:20px; } }
   .card + .card, .card + details, details + .card, details + details{ margin-top:12px; }
-  @media (min-width:640px){ .card + .card, .card + details, details + .card, details + details{ margin-top:20px; } }
+  @media (min-width:560px){ .card + .card, .card + details, details + .card, details + details{ margin-top:20px; } }
 
   .install-banner{
     display:flex; align-items:center; gap:12px; flex-wrap:wrap;
@@ -263,9 +269,9 @@
   @media (min-width:520px){ button.primary{ align-self:flex-start; } }
   [data-theme="dark"] button.primary, :root:not([data-theme="light"]) button.primary { }
   @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]) button.primary{ background:var(--michal); color:#12211c; }
+    :root:not([data-theme="light"]) button.primary{ background:var(--michal); color:#1f2a10; }
   }
-  :root[data-theme="dark"] button.primary{ background:var(--michal); color:#12211c; }
+  :root[data-theme="dark"] button.primary{ background:var(--michal); color:#1f2a10; }
 
   .trip-list{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
   .trip-item{
@@ -391,6 +397,15 @@
   .day-popover-row{ display:flex; align-items:baseline; gap:6px; margin-top:3px; }
   .day-popover-row .dot{ margin-top:2px; }
   .day-popover-name{ font-weight:600; flex:none; }
+  .quick-title{ margin-top:10px; font-size:12.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; }
+  .quick-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .quick-chip{
+    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink);
+    padding:8px 12px; min-height:38px; border-radius:9px; font:inherit; font-size:14px; cursor:pointer;
+  }
+  .quick-chip:hover{ border-color:var(--ink-soft); }
+  .quick-repeat{ display:flex; align-items:center; gap:6px; margin-top:8px; font-size:13px; text-transform:none; letter-spacing:0; color:var(--ink); }
+  .quick-custom{ border:none; background:none; padding:6px 0 0; font:inherit; font-size:13px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; }
   .day-popover-loc{ color:var(--ink-soft); }
   .day-popover-distance-total{
     margin-top:8px; padding-top:8px; border-top:1px solid var(--line);
@@ -400,8 +415,8 @@
     display:block; width:100%; margin-top:10px; border:none; background:var(--ink); color:var(--paper);
     padding:10px 14px; border-radius:9px; font-family:inherit; font-weight:700; font-size:13.5px; cursor:pointer;
   }
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .day-popover-propose{ background:var(--michal); color:#12211c; } }
-  :root[data-theme="dark"] .day-popover-propose{ background:var(--michal); color:#12211c; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .day-popover-propose{ background:var(--michal); color:#1f2a10; } }
+  :root[data-theme="dark"] .day-popover-propose{ background:var(--michal); color:#1f2a10; }
   .day-popover-status{
     margin-top:10px; padding-top:8px; border-top:1px solid var(--line);
     font-weight:600; font-size:13px; color:var(--ink-soft);
@@ -638,10 +653,10 @@
     cursor:pointer; align-self:flex-start;
   }
   @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]) .planner-btn{ background:var(--michal); color:#12211c; }
+    :root:not([data-theme="light"]) .planner-btn{ background:var(--michal); color:#1f2a10; }
     :root:not([data-theme="light"]) .planner-hero .planner-eyebrow, :root:not([data-theme="light"]) .planner-hero .planner-meta{ color:var(--ink-soft); }
   }
-  :root[data-theme="dark"] .planner-btn{ background:var(--michal); color:#12211c; }
+  :root[data-theme="dark"] .planner-btn{ background:var(--michal); color:#1f2a10; }
   :root[data-theme="dark"] .planner-hero .planner-eyebrow, :root[data-theme="dark"] .planner-hero .planner-meta{ color:var(--ink-soft); }
 
   .idea-list{ display:flex; flex-direction:column; gap:2px; }
@@ -667,11 +682,71 @@
     border:none; background:var(--ink); color:var(--paper); border-radius:9px;
     padding:0 16px; font:inherit; font-weight:700; font-size:14px; cursor:pointer;
   }
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .idea-add button{ background:var(--michal); color:#12211c; } }
-  :root[data-theme="dark"] .idea-add button{ background:var(--michal); color:#12211c; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .idea-add button{ background:var(--michal); color:#1f2a10; } }
+  :root[data-theme="dark"] .idea-add button{ background:var(--michal); color:#1f2a10; }
 </style>
 </head>
 <body>
+<div class="autumn-bg" aria-hidden="true">
+<svg viewBox="0 0 900 300" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<path id="leaf" d="M0 0Q12 -14 0 -30Q-12 -14 0 0ZM0 0L0 6M0 -4L0 -22" stroke="#6a4020" stroke-width=".9" stroke-linecap="round"/>
+<g id="dog" stroke="#4a2f18" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+  <!-- tail -->
+  <path d="M64 78C34 66 18 40 24 14C38 26 56 40 74 60Z" fill="#2f231d"/>
+  <path d="M40 52C50 56 58 62 68 70" fill="none" stroke="#6b4a2a" stroke-width="2"/>
+  <!-- far legs -->
+  <path d="M96 122L102 170L96 184L122 184L120 168L114 126Z" fill="#b87a30"/>
+  <path d="M176 146L204 172L232 184L234 196L200 194L172 170Z" fill="#b87a30"/>
+  <!-- body -->
+  <path d="M58 72C90 54 150 68 192 96C216 110 226 132 214 152C204 166 178 162 158 152C128 142 90 134 68 122C46 108 42 86 58 72Z" fill="#d49a4a"/>
+  <!-- saddle -->
+  <path d="M76 68C114 58 162 76 194 98C180 106 160 102 140 94C116 86 94 84 72 86Z" fill="#2b211c"/>
+  <path d="M120 100C150 110 172 124 180 140" fill="none" stroke="#2b211c" stroke-width="7"/>
+  <!-- chest and belly -->
+  <path d="M192 112C214 118 222 140 206 154C194 152 188 134 192 112Z" fill="#ecc27a" stroke="none"/>
+  <path d="M96 128C120 138 150 148 170 154" fill="none" stroke="#ecc27a" stroke-width="8" stroke-linecap="round"/>
+  <!-- fur strokes -->
+  <path d="M86 96l10 -4M104 108l10 -4M130 82l8 8M150 120l8 4M200 124l-6 6M208 134l-6 6" fill="none" stroke="#9a6224" stroke-width="2"/>
+  <!-- near hind leg -->
+  <path d="M60 96C62 70 108 72 108 100C108 116 100 124 94 128L90 168L84 184L62 184L66 166L72 130C62 120 58 108 60 96Z" fill="#d49a4a"/>
+  <path d="M80 98C86 106 92 110 100 110" fill="none" stroke="#9a6224" stroke-width="2"/>
+  <ellipse cx="73" cy="184" rx="14" ry="6" fill="#ecc27a"/>
+  <!-- near front leg -->
+  <path d="M192 140L224 166L252 176L254 190L218 190L190 168Z" fill="#d49a4a"/>
+  <ellipse cx="236" cy="190" rx="18" ry="6" fill="#ecc27a"/>
+  <path d="M206 168l8 6M214 162l8 6" fill="none" stroke="#9a6224" stroke-width="2"/>
+  <!-- neck -->
+  <path d="M184 100C200 80 214 70 232 66L246 98C228 118 206 124 188 120Z" fill="#d49a4a"/>
+  <!-- collar -->
+  <path d="M206 84C216 98 226 108 236 112" fill="none" stroke="#c43a24" stroke-width="7"/>
+  <circle cx="222" cy="104" r="4" fill="#e8b020" stroke-width="1.5"/>
+  <!-- far ear -->
+  <path d="M222 62L218 30L242 52Z" fill="#7a4e22"/>
+  <!-- head -->
+  <ellipse cx="248" cy="74" rx="27" ry="23" fill="#d49a4a"/>
+  <path d="M230 58C240 50 256 50 266 56C258 60 244 62 230 58Z" fill="#2b211c" stroke="none"/>
+  <!-- muzzle -->
+  <path d="M264 70C284 66 302 74 304 84C302 96 282 98 262 94Z" fill="#3a2a22"/>
+  <path d="M268 94Q283 106 298 92" fill="none" stroke="#1a120e" stroke-width="2.5"/>
+  <path d="M278 98Q282 114 290 98Z" fill="#e46a7a" stroke="#a83a4a" stroke-width="1.5"/>
+  <ellipse cx="303" cy="81" rx="5.5" ry="4.2" fill="#14100e" stroke="none"/>
+  <circle cx="301" cy="79" r="1.2" fill="#fff" stroke="none"/>
+  <!-- eye -->
+  <circle cx="262" cy="68" r="4" fill="#14100e" stroke="none"/>
+  <circle cx="263.2" cy="66.6" r="1.3" fill="#fff" stroke="none"/>
+  <circle cx="261" cy="59" r="2.6" fill="#ecc27a" stroke="none"/>
+  <!-- near ear -->
+  <path d="M236 60L240 24L264 50Z" fill="#2b211c"/>
+  <path d="M241 52L243 34L256 50Z" fill="#a06a6a" stroke="none"/>
+</g>
+</defs>
+<g opacity=".9"><use href="#leaf" fill="#e8b020" transform="translate(672 96) rotate(60) scale(0.88)"/><use href="#leaf" fill="#a8321f" transform="translate(411 105) rotate(282) scale(1.06)"/><use href="#leaf" fill="#f0c63c" transform="translate(139 179) rotate(305) scale(1.05)"/><use href="#leaf" fill="#d9731f" transform="translate(529 189) rotate(6) scale(0.66)"/><use href="#leaf" fill="#8a5a2a" transform="translate(48 131) rotate(43) scale(0.77)"/><use href="#leaf" fill="#a8321f" transform="translate(467 75) rotate(204) scale(0.73)"/><use href="#leaf" fill="#d9731f" transform="translate(694 172) rotate(284) scale(0.77)"/><use href="#leaf" fill="#a8321f" transform="translate(536 119) rotate(148) scale(0.89)"/><use href="#leaf" fill="#d9731f" transform="translate(506 105) rotate(101) scale(1.04)"/><use href="#leaf" fill="#f0c63c" transform="translate(741 200) rotate(147) scale(0.79)"/><use href="#leaf" fill="#d9731f" transform="translate(119 217) rotate(119) scale(0.84)"/><use href="#leaf" fill="#d9731f" transform="translate(798 87) rotate(20) scale(0.95)"/><use href="#leaf" fill="#f0c63c" transform="translate(650 145) rotate(271) scale(0.72)"/><use href="#leaf" fill="#d9731f" transform="translate(774 71) rotate(304) scale(0.68)"/><use href="#leaf" fill="#f0c63c" transform="translate(856 120) rotate(38) scale(1.05)"/><use href="#leaf" fill="#a8321f" transform="translate(283 103) rotate(85) scale(0.59)"/><use href="#leaf" fill="#c43a24" transform="translate(851 160) rotate(312) scale(0.78)"/><use href="#leaf" fill="#e8b020" transform="translate(211 177) rotate(204) scale(1.05)"/><use href="#leaf" fill="#d9731f" transform="translate(467 47) rotate(318) scale(0.87)"/><use href="#leaf" fill="#e8b020" transform="translate(20 71) rotate(108) scale(0.73)"/><use href="#leaf" fill="#a8321f" transform="translate(399 115) rotate(191) scale(0.63)"/><use href="#leaf" fill="#8a5a2a" transform="translate(524 30) rotate(11) scale(1.04)"/><use href="#leaf" fill="#c43a24" transform="translate(299 50) rotate(280) scale(0.98)"/><use href="#leaf" fill="#8a5a2a" transform="translate(194 200) rotate(249) scale(0.58)"/><use href="#leaf" fill="#a8321f" transform="translate(741 94) rotate(170) scale(0.64)"/><use href="#leaf" fill="#e8b020" transform="translate(876 62) rotate(228) scale(0.66)"/><use href="#leaf" fill="#8a5a2a" transform="translate(579 84) rotate(294) scale(1.08)"/><use href="#leaf" fill="#d9731f" transform="translate(768 170) rotate(49) scale(0.93)"/><use href="#leaf" fill="#a8321f" transform="translate(377 56) rotate(310) scale(0.62)"/><use href="#leaf" fill="#8a5a2a" transform="translate(189 58) rotate(85) scale(0.92)"/><use href="#leaf" fill="#c43a24" transform="translate(340 159) rotate(318) scale(0.87)"/><use href="#leaf" fill="#c43a24" transform="translate(860 208) rotate(65) scale(0.67)"/><use href="#leaf" fill="#f0c63c" transform="translate(570 39) rotate(354) scale(0.79)"/><use href="#leaf" fill="#f0c63c" transform="translate(83 211) rotate(3) scale(0.87)"/><use href="#leaf" fill="#c43a24" transform="translate(185 102) rotate(31) scale(0.84)"/><use href="#leaf" fill="#c43a24" transform="translate(184 55) rotate(197) scale(0.79)"/><use href="#leaf" fill="#d9731f" transform="translate(377 33) rotate(166) scale(1.08)"/><use href="#leaf" fill="#a8321f" transform="translate(121 110) rotate(22) scale(0.73)"/><use href="#leaf" fill="#8a5a2a" transform="translate(357 59) rotate(174) scale(0.72)"/><use href="#leaf" fill="#f0c63c" transform="translate(251 106) rotate(246) scale(0.96)"/><use href="#leaf" fill="#c43a24" transform="translate(165 100) rotate(59) scale(1.00)"/><use href="#leaf" fill="#a8321f" transform="translate(294 79) rotate(92) scale(1.06)"/><use href="#leaf" fill="#d9731f" transform="translate(181 74) rotate(80) scale(0.99)"/><use href="#leaf" fill="#d9731f" transform="translate(588 48) rotate(349) scale(0.73)"/><use href="#leaf" fill="#d9731f" transform="translate(747 46) rotate(55) scale(0.71)"/><use href="#leaf" fill="#e8b020" transform="translate(730 75) rotate(260) scale(1.13)"/><use href="#leaf" fill="#a8321f" transform="translate(539 112) rotate(205) scale(0.97)"/><use href="#leaf" fill="#8a5a2a" transform="translate(582 43) rotate(112) scale(0.72)"/><use href="#leaf" fill="#d9731f" transform="translate(733 96) rotate(281) scale(1.08)"/><use href="#leaf" fill="#c43a24" transform="translate(543 104) rotate(62) scale(0.83)"/><use href="#leaf" fill="#8a5a2a" transform="translate(649 89) rotate(215) scale(0.93)"/><use href="#leaf" fill="#e8b020" transform="translate(627 63) rotate(78) scale(1.19)"/></g>
+<g transform="translate(95 74)"><use href="#dog"/></g>
+<g transform="translate(805 88) scale(-.92 .92)"><use href="#dog"/></g>
+<g><use href="#leaf" fill="#f0c63c" transform="translate(408 239) rotate(168) scale(1.00)"/><use href="#leaf" fill="#d9731f" transform="translate(177 261) rotate(221) scale(0.84)"/><use href="#leaf" fill="#d9731f" transform="translate(277 260) rotate(250) scale(0.77)"/><use href="#leaf" fill="#f0c63c" transform="translate(859 275) rotate(57) scale(0.76)"/><use href="#leaf" fill="#8a5a2a" transform="translate(66 291) rotate(216) scale(1.14)"/><use href="#leaf" fill="#a8321f" transform="translate(398 241) rotate(231) scale(1.00)"/><use href="#leaf" fill="#e8b020" transform="translate(85 274) rotate(198) scale(1.22)"/><use href="#leaf" fill="#e8b020" transform="translate(633 260) rotate(104) scale(0.79)"/><use href="#leaf" fill="#e8b020" transform="translate(362 244) rotate(345) scale(1.17)"/><use href="#leaf" fill="#d9731f" transform="translate(198 254) rotate(135) scale(1.10)"/><use href="#leaf" fill="#8a5a2a" transform="translate(74 276) rotate(97) scale(0.79)"/><use href="#leaf" fill="#e8b020" transform="translate(23 281) rotate(48) scale(1.10)"/><use href="#leaf" fill="#c43a24" transform="translate(63 271) rotate(201) scale(0.97)"/><use href="#leaf" fill="#c43a24" transform="translate(877 272) rotate(138) scale(0.95)"/><use href="#leaf" fill="#e8b020" transform="translate(10 270) rotate(213) scale(1.25)"/><use href="#leaf" fill="#c43a24" transform="translate(195 267) rotate(231) scale(0.80)"/><use href="#leaf" fill="#e8b020" transform="translate(198 270) rotate(118) scale(0.90)"/><use href="#leaf" fill="#f0c63c" transform="translate(75 287) rotate(6) scale(0.93)"/><use href="#leaf" fill="#c43a24" transform="translate(409 239) rotate(207) scale(1.18)"/><use href="#leaf" fill="#c43a24" transform="translate(562 261) rotate(220) scale(1.11)"/><use href="#leaf" fill="#f0c63c" transform="translate(661 246) rotate(342) scale(1.19)"/><use href="#leaf" fill="#a8321f" transform="translate(79 291) rotate(184) scale(0.88)"/><use href="#leaf" fill="#c43a24" transform="translate(630 256) rotate(215) scale(0.90)"/><use href="#leaf" fill="#f0c63c" transform="translate(828 267) rotate(173) scale(1.08)"/><use href="#leaf" fill="#8a5a2a" transform="translate(551 250) rotate(73) scale(0.76)"/><use href="#leaf" fill="#c43a24" transform="translate(372 267) rotate(102) scale(1.02)"/><use href="#leaf" fill="#f0c63c" transform="translate(91 287) rotate(119) scale(1.12)"/><use href="#leaf" fill="#a8321f" transform="translate(524 270) rotate(6) scale(1.21)"/><use href="#leaf" fill="#8a5a2a" transform="translate(284 264) rotate(27) scale(0.78)"/><use href="#leaf" fill="#a8321f" transform="translate(291 244) rotate(197) scale(1.12)"/><use href="#leaf" fill="#d9731f" transform="translate(659 262) rotate(123) scale(0.79)"/><use href="#leaf" fill="#f0c63c" transform="translate(803 268) rotate(285) scale(1.18)"/><use href="#leaf" fill="#e8b020" transform="translate(23 275) rotate(4) scale(0.79)"/><use href="#leaf" fill="#a8321f" transform="translate(573 233) rotate(262) scale(0.94)"/><use href="#leaf" fill="#f0c63c" transform="translate(621 254) rotate(195) scale(1.01)"/><use href="#leaf" fill="#d9731f" transform="translate(36 276) rotate(83) scale(1.10)"/><use href="#leaf" fill="#c43a24" transform="translate(696 259) rotate(323) scale(0.93)"/><use href="#leaf" fill="#d9731f" transform="translate(607 264) rotate(326) scale(1.08)"/><use href="#leaf" fill="#c43a24" transform="translate(449 256) rotate(90) scale(1.07)"/><use href="#leaf" fill="#d9731f" transform="translate(785 278) rotate(114) scale(0.82)"/><use href="#leaf" fill="#c43a24" transform="translate(319 248) rotate(23) scale(1.24)"/><use href="#leaf" fill="#f0c63c" transform="translate(109 277) rotate(299) scale(0.94)"/><use href="#leaf" fill="#e8b020" transform="translate(445 243) rotate(354) scale(0.98)"/><use href="#leaf" fill="#8a5a2a" transform="translate(739 277) rotate(244) scale(0.89)"/><use href="#leaf" fill="#e8b020" transform="translate(282 250) rotate(49) scale(0.98)"/><use href="#leaf" fill="#e8b020" transform="translate(687 266) rotate(287) scale(1.24)"/><use href="#leaf" fill="#a8321f" transform="translate(403 244) rotate(291) scale(1.23)"/><use href="#leaf" fill="#f0c63c" transform="translate(184 259) rotate(257) scale(1.13)"/><use href="#leaf" fill="#f0c63c" transform="translate(638 263) rotate(124) scale(1.10)"/><use href="#leaf" fill="#c43a24" transform="translate(450 243) rotate(306) scale(1.10)"/><use href="#leaf" fill="#a8321f" transform="translate(87 267) rotate(47) scale(0.98)"/><use href="#leaf" fill="#8a5a2a" transform="translate(791 289) rotate(235) scale(1.00)"/><use href="#leaf" fill="#a8321f" transform="translate(418 254) rotate(260) scale(1.16)"/><use href="#leaf" fill="#8a5a2a" transform="translate(823 289) rotate(140) scale(0.79)"/><use href="#leaf" fill="#8a5a2a" transform="translate(483 247) rotate(328) scale(1.18)"/><use href="#leaf" fill="#e8b020" transform="translate(454 264) rotate(152) scale(0.89)"/><use href="#leaf" fill="#a8321f" transform="translate(202 254) rotate(13) scale(1.02)"/><use href="#leaf" fill="#a8321f" transform="translate(703 275) rotate(186) scale(1.11)"/><use href="#leaf" fill="#c43a24" transform="translate(617 241) rotate(342) scale(0.79)"/><use href="#leaf" fill="#f0c63c" transform="translate(397 242) rotate(202) scale(0.83)"/><use href="#leaf" fill="#f0c63c" transform="translate(752 271) rotate(137) scale(1.17)"/><use href="#leaf" fill="#c43a24" transform="translate(193 255) rotate(189) scale(1.04)"/><use href="#leaf" fill="#e8b020" transform="translate(372 271) rotate(136) scale(1.02)"/><use href="#leaf" fill="#a8321f" transform="translate(464 243) rotate(203) scale(1.00)"/><use href="#leaf" fill="#d9731f" transform="translate(157 260) rotate(331) scale(1.15)"/><use href="#leaf" fill="#d9731f" transform="translate(247 257) rotate(156) scale(1.16)"/><use href="#leaf" fill="#a8321f" transform="translate(472 262) rotate(11) scale(0.88)"/><use href="#leaf" fill="#8a5a2a" transform="translate(696 276) rotate(82) scale(1.09)"/><use href="#leaf" fill="#f0c63c" transform="translate(647 260) rotate(180) scale(1.04)"/><use href="#leaf" fill="#a8321f" transform="translate(559 243) rotate(316) scale(0.76)"/><use href="#leaf" fill="#a8321f" transform="translate(374 257) rotate(74) scale(1.07)"/><use href="#leaf" fill="#a8321f" transform="translate(202 271) rotate(211) scale(0.82)"/><use href="#leaf" fill="#c43a24" transform="translate(563 261) rotate(217) scale(1.20)"/><use href="#leaf" fill="#a8321f" transform="translate(202 249) rotate(48) scale(0.87)"/><use href="#leaf" fill="#a8321f" transform="translate(88 281) rotate(339) scale(1.02)"/><use href="#leaf" fill="#a8321f" transform="translate(121 277) rotate(6) scale(0.85)"/><use href="#leaf" fill="#8a5a2a" transform="translate(325 246) rotate(254) scale(1.07)"/><use href="#leaf" fill="#e8b020" transform="translate(452 251) rotate(25) scale(0.80)"/><use href="#leaf" fill="#e8b020" transform="translate(681 255) rotate(173) scale(0.84)"/><use href="#leaf" fill="#e8b020" transform="translate(189 257) rotate(334) scale(0.80)"/><use href="#leaf" fill="#d9731f" transform="translate(128 269) rotate(35) scale(0.95)"/><use href="#leaf" fill="#c43a24" transform="translate(463 248) rotate(5) scale(1.10)"/><use href="#leaf" fill="#c43a24" transform="translate(170 271) rotate(146) scale(0.85)"/><use href="#leaf" fill="#a8321f" transform="translate(93 270) rotate(31) scale(1.17)"/><use href="#leaf" fill="#8a5a2a" transform="translate(837 277) rotate(210) scale(0.92)"/><use href="#leaf" fill="#c43a24" transform="translate(256 261) rotate(58) scale(1.22)"/><use href="#leaf" fill="#d9731f" transform="translate(799 267) rotate(276) scale(1.13)"/><use href="#leaf" fill="#8a5a2a" transform="translate(192 273) rotate(109) scale(0.80)"/><use href="#leaf" fill="#8a5a2a" transform="translate(882 269) rotate(98) scale(1.23)"/><use href="#leaf" fill="#d9731f" transform="translate(307 247) rotate(192) scale(0.94)"/><use href="#leaf" fill="#f0c63c" transform="translate(575 243) rotate(353) scale(0.76)"/><use href="#leaf" fill="#a8321f" transform="translate(105 283) rotate(182) scale(1.13)"/><use href="#leaf" fill="#f0c63c" transform="translate(341 266) rotate(326) scale(1.03)"/><use href="#leaf" fill="#a8321f" transform="translate(376 244) rotate(36) scale(0.97)"/><use href="#leaf" fill="#c43a24" transform="translate(77 276) rotate(16) scale(1.22)"/><use href="#leaf" fill="#d9731f" transform="translate(350 233) rotate(195) scale(1.05)"/><use href="#leaf" fill="#8a5a2a" transform="translate(842 281) rotate(215) scale(0.93)"/><use href="#leaf" fill="#e8b020" transform="translate(435 243) rotate(239) scale(1.12)"/><use href="#leaf" fill="#d9731f" transform="translate(22 286) rotate(56) scale(1.13)"/><use href="#leaf" fill="#8a5a2a" transform="translate(56 284) rotate(209) scale(1.11)"/><use href="#leaf" fill="#c43a24" transform="translate(75 268) rotate(172) scale(1.24)"/><use href="#leaf" fill="#c43a24" transform="translate(50 289) rotate(327) scale(0.82)"/><use href="#leaf" fill="#e8b020" transform="translate(541 259) rotate(164) scale(0.85)"/><use href="#leaf" fill="#f0c63c" transform="translate(324 263) rotate(50) scale(0.96)"/><use href="#leaf" fill="#c43a24" transform="translate(241 254) rotate(280) scale(1.02)"/><use href="#leaf" fill="#f0c63c" transform="translate(848 273) rotate(41) scale(1.20)"/><use href="#leaf" fill="#f0c63c" transform="translate(560 259) rotate(247) scale(1.03)"/><use href="#leaf" fill="#a8321f" transform="translate(177 275) rotate(343) scale(1.00)"/><use href="#leaf" fill="#d9731f" transform="translate(816 269) rotate(22) scale(0.89)"/><use href="#leaf" fill="#a8321f" transform="translate(34 291) rotate(100) scale(1.13)"/><use href="#leaf" fill="#8a5a2a" transform="translate(152 279) rotate(174) scale(0.93)"/><use href="#leaf" fill="#f0c63c" transform="translate(312 241) rotate(27) scale(0.81)"/><use href="#leaf" fill="#c43a24" transform="translate(747 265) rotate(269) scale(0.95)"/><use href="#leaf" fill="#a8321f" transform="translate(335 240) rotate(117) scale(1.02)"/><use href="#leaf" fill="#8a5a2a" transform="translate(737 279) rotate(209) scale(0.98)"/><use href="#leaf" fill="#8a5a2a" transform="translate(79 290) rotate(175) scale(1.09)"/><use href="#leaf" fill="#a8321f" transform="translate(735 283) rotate(328) scale(1.05)"/><use href="#leaf" fill="#8a5a2a" transform="translate(277 245) rotate(102) scale(0.82)"/><use href="#leaf" fill="#f0c63c" transform="translate(588 251) rotate(116) scale(0.97)"/><use href="#leaf" fill="#8a5a2a" transform="translate(818 267) rotate(158) scale(1.15)"/><use href="#leaf" fill="#e8b020" transform="translate(413 246) rotate(263) scale(1.01)"/><use href="#leaf" fill="#c43a24" transform="translate(328 257) rotate(142) scale(0.94)"/><use href="#leaf" fill="#c43a24" transform="translate(660 259) rotate(56) scale(1.05)"/><use href="#leaf" fill="#f0c63c" transform="translate(165 264) rotate(101) scale(0.76)"/><use href="#leaf" fill="#d9731f" transform="translate(61 288) rotate(8) scale(1.17)"/><use href="#leaf" fill="#a8321f" transform="translate(66 278) rotate(30) scale(0.79)"/><use href="#leaf" fill="#a8321f" transform="translate(103 282) rotate(235) scale(0.80)"/><use href="#leaf" fill="#d9731f" transform="translate(381 246) rotate(327) scale(0.92)"/><use href="#leaf" fill="#f0c63c" transform="translate(357 247) rotate(242) scale(1.00)"/><use href="#leaf" fill="#a8321f" transform="translate(718 279) rotate(17) scale(1.13)"/><use href="#leaf" fill="#f0c63c" transform="translate(317 267) rotate(32) scale(0.98)"/><use href="#leaf" fill="#d9731f" transform="translate(573 248) rotate(289) scale(0.96)"/><use href="#leaf" fill="#8a5a2a" transform="translate(816 285) rotate(229) scale(1.09)"/><use href="#leaf" fill="#8a5a2a" transform="translate(190 268) rotate(349) scale(0.78)"/><use href="#leaf" fill="#d9731f" transform="translate(653 261) rotate(331) scale(1.21)"/><use href="#leaf" fill="#8a5a2a" transform="translate(25 279) rotate(113) scale(0.85)"/><use href="#leaf" fill="#c43a24" transform="translate(201 270) rotate(214) scale(0.86)"/><use href="#leaf" fill="#f0c63c" transform="translate(797 279) rotate(337) scale(1.06)"/><use href="#leaf" fill="#f0c63c" transform="translate(432 245) rotate(329) scale(0.92)"/><use href="#leaf" fill="#c43a24" transform="translate(689 271) rotate(144) scale(0.86)"/><use href="#leaf" fill="#e8b020" transform="translate(715 270) rotate(186) scale(0.89)"/><use href="#leaf" fill="#c43a24" transform="translate(589 266) rotate(170) scale(0.94)"/><use href="#leaf" fill="#8a5a2a" transform="translate(638 253) rotate(56) scale(0.91)"/><use href="#leaf" fill="#f0c63c" transform="translate(809 270) rotate(267) scale(1.06)"/><use href="#leaf" fill="#c43a24" transform="translate(480 253) rotate(0) scale(1.16)"/><use href="#leaf" fill="#d9731f" transform="translate(733 281) rotate(258) scale(0.80)"/><use href="#leaf" fill="#e8b020" transform="translate(620 261) rotate(196) scale(1.00)"/><use href="#leaf" fill="#c43a24" transform="translate(705 266) rotate(33) scale(1.16)"/><use href="#leaf" fill="#8a5a2a" transform="translate(43 281) rotate(341) scale(1.23)"/><use href="#leaf" fill="#8a5a2a" transform="translate(283 266) rotate(168) scale(1.11)"/><use href="#leaf" fill="#e8b020" transform="translate(75 288) rotate(243) scale(1.12)"/><use href="#leaf" fill="#f0c63c" transform="translate(585 266) rotate(256) scale(0.87)"/><use href="#leaf" fill="#f0c63c" transform="translate(110 269) rotate(304) scale(1.11)"/><use href="#leaf" fill="#d9731f" transform="translate(144 269) rotate(270) scale(1.23)"/><use href="#leaf" fill="#8a5a2a" transform="translate(499 268) rotate(136) scale(0.80)"/><use href="#leaf" fill="#e8b020" transform="translate(842 277) rotate(119) scale(1.16)"/><use href="#leaf" fill="#c43a24" transform="translate(100 274) rotate(227) scale(0.84)"/><use href="#leaf" fill="#c43a24" transform="translate(364 241) rotate(32) scale(0.86)"/><use href="#leaf" fill="#f0c63c" transform="translate(879 281) rotate(123) scale(1.16)"/><use href="#leaf" fill="#d9731f" transform="translate(132 281) rotate(249) scale(0.99)"/><use href="#leaf" fill="#c43a24" transform="translate(558 244) rotate(114) scale(1.14)"/><use href="#leaf" fill="#a8321f" transform="translate(591 256) rotate(119) scale(0.92)"/><use href="#leaf" fill="#e8b020" transform="translate(398 256) rotate(120) scale(0.90)"/><use href="#leaf" fill="#8a5a2a" transform="translate(548 256) rotate(325) scale(1.02)"/><use href="#leaf" fill="#a8321f" transform="translate(549 250) rotate(71) scale(1.22)"/><use href="#leaf" fill="#e8b020" transform="translate(632 241) rotate(10) scale(1.08)"/><use href="#leaf" fill="#8a5a2a" transform="translate(130 275) rotate(120) scale(0.80)"/><use href="#leaf" fill="#f0c63c" transform="translate(244 245) rotate(263) scale(0.87)"/><use href="#leaf" fill="#8a5a2a" transform="translate(488 247) rotate(95) scale(1.20)"/><use href="#leaf" fill="#c43a24" transform="translate(539 255) rotate(104) scale(1.20)"/></g>
+</svg>
+</div>
 
 <div class="wrap">
   <header>
@@ -1418,8 +1493,33 @@ function showDayPopover(dayEl){
     : (confirmed && confirmed.date === ymd
         ? `<div class="day-popover-status">${confirmed.status === 'proposed' ? 'Propozycja czeka na odpowiedź' : 'Tu jest wasza kawa 🎉'}</div>`
         : '');
-  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">${ICON_XMARK}</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${actionRow}`;
+  const canQuick = me && ymd >= today;
+  const quick = canQuick ? `
+    <div class="quick-title">Moja zajętość (${PERSON_NAMES[me]}):</div>
+    <div class="quick-chips">
+      ${QUICK_SLOTS.map((s,i)=>`<button type="button" class="quick-chip" data-slot="${i}">${s.label}</button>`).join('')}
+      <button type="button" class="quick-chip quick-clear" data-slot="clear">Wolny</button>
+    </div>
+    <label class="quick-repeat"><input type="checkbox" id="quickRepeat"> co tydzień (8 tygodni)</label>
+    <button type="button" class="quick-custom" id="quickCustom">Własne godziny…</button>` : '';
+  pop.innerHTML = `<button class="day-popover-close" aria-label="Zamknij">${ICON_XMARK}</button><div class="day-popover-date">${d.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'})}</div>${rows.join('')}${quick}${actionRow}`;
   pop.hidden = false;
+  if(canQuick){
+    pop.querySelectorAll('.quick-chip').forEach(btn=>btn.addEventListener('click', async ()=>{
+      const repeat = document.getElementById('quickRepeat').checked;
+      hideDayPopover();
+      if(btn.dataset.slot === 'clear') await clearMyDay(ymd, repeat);
+      else await addQuickTrips(ymd, QUICK_SLOTS[+btn.dataset.slot], repeat);
+    }));
+    document.getElementById('quickCustom').addEventListener('click', ()=>{
+      hideDayPopover();
+      document.getElementById('start').value = ymd;
+      const det = document.getElementById('tripFormDetails');
+      det.open = true;
+      det.scrollIntoView({behavior:'smooth', block:'center'});
+      document.getElementById('timeFrom').focus({preventScroll:true});
+    });
+  }
   if(canPropose){
     document.getElementById('dayPopoverPropose').addEventListener('click', ()=>{
       hideDayPopover();
@@ -1437,6 +1537,50 @@ function showDayPopover(dayEl){
   pop.style.left = left + 'px';
   pop.style.top = top + 'px';
   pop.querySelector('.day-popover-close').addEventListener('click', hideDayPopover);
+}
+
+const QUICK_SLOTS = [
+  { label: 'Cały dzień', from: null, to: null },
+  { label: 'Rano', from: '06:00', to: '12:00' },
+  { label: 'Popołudnie', from: '12:00', to: '17:00' },
+  { label: 'Wieczór', from: '17:00', to: '23:59' }
+];
+
+function quickDates(ymd, repeat){
+  const out = [];
+  for(let i = 0; i < (repeat ? 8 : 1); i++) out.push(addDaysYmd(ymd, i * 7));
+  return out;
+}
+function addDaysYmd(ymd, n){
+  const d = parse(ymd);
+  d.setDate(d.getDate() + n);
+  return dateStr(d);
+}
+
+async function addQuickTrips(ymd, slot, repeat){
+  const added = [];
+  quickDates(ymd, repeat).forEach((date, i)=>{
+    const dup = trips.some(t => t.person===me && t.start===date && (t.fromTime||null)===slot.from && (t.toTime||null)===slot.to);
+    if(dup) return;
+    const id = 't_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,6);
+    added.push({ id, person: me, start: date, end: date, fromTime: slot.from, toTime: slot.to, loc: '', lat: null, lon: null, createdAt: Date.now() });
+  });
+  if(!added.length) return;
+  trips = trips.concat(added);
+  renderAll();
+  try{ await Promise.all(added.map(t=>setDoc(doc(firestore, 'trips', t.id), t))); }
+  catch(err){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+}
+
+async function clearMyDay(ymd, repeat){
+  const dates = new Set(quickDates(ymd, repeat));
+  const gone = trips.filter(t => t.person===me && t.start===t.end && dates.has(t.start));
+  if(!gone.length) return;
+  const ids = new Set(gone.map(t=>t.id));
+  trips = trips.filter(t=>!ids.has(t.id));
+  renderAll();
+  try{ await Promise.all(gone.map(t=>deleteDoc(doc(firestore, 'trips', t.id)))); }
+  catch(err){ setStatus('Nie usunięto na serwerze — spróbuj ponownie.'); }
 }
 
 function hideDayPopover(){
