@@ -903,6 +903,52 @@ const firestore = getFirestore(fbApp);
 const tripsCol = collection(firestore, 'trips');
 const profilesCol = collection(firestore, 'profiles');
 const confirmedDocRef = doc(firestore, 'meta', 'confirmed_date');
+// Miejsca na randki — dane muszą być zadeklarowane przed pierwszym renderAll() (setWho przy starcie)
+const PLACE_CATS = [
+  { key:'all', label:'Wszystkie' },
+  { key:'restaurant', label:'Restauracje' },
+  { key:'cafe', label:'Kawiarnie' },
+  { key:'bowling', label:'Kręgle' },
+  { key:'billiards', label:'Bilard' },
+  { key:'fun', label:'Escape i minigolf' }
+];
+// [kategoria, nazwa, lokalizacja]
+const PLACES = [
+  ['restaurant','Concept 13','Bracka 9, Śródmieście'],
+  ['restaurant','Kiseki by Alon','Śródmieście'],
+  ['restaurant','OTO!SUSHI','Nowy Świat, Śródmieście'],
+  ['restaurant','Restauracja Polka','Stare Miasto'],
+  ['restaurant','Stary Dom','Mokotów'],
+  ['restaurant','Bistro de Paris','Śródmieście'],
+  ['restaurant','Hala Koszyki','Koszykowa 63, Śródmieście'],
+  ['restaurant','Browary Warszawskie','Grzybowska 60, Wola'],
+  ['restaurant','Koneser','Plac Konesera 1, Praga-Północ'],
+  ['cafe','Relaks','Puławska, Mokotów'],
+  ['cafe','STOR Cafe','Tamka, Powiśle'],
+  ['cafe','Coffeedesk','Wilcza, Śródmieście'],
+  ['cafe','Cafe Bristol','Krakowskie Przedmieście 42/44, Śródmieście'],
+  ['cafe','Charlotte','plac Zbawiciela 3/5, Śródmieście'],
+  ['cafe','Cafe Kafka','Oboźna 3, Śródmieście'],
+  ['bowling','Kręgielnia 7club','Jagiellońska, Praga-Północ'],
+  ['bowling','Kręgielnia OSIR Praga-Południe','Praga-Południe'],
+  ['bowling','Kręgielnia w Parku Kultury w Powsinie','Maczka 5, Powsin'],
+  ['billiards','Klub bilardowy Pictures','Obrazkowa 26, Włochy'],
+  ['billiards','Klub bilardowy Winner','Grójecka 19/25, Ochota'],
+  ['billiards','Klub bilardowy Land Club','Wałbrzyska 11, Mokotów'],
+  ['billiards','Klub bilardowy Billboard','Kasprzaka 7, Wola'],
+  ['billiards','House of Pool','Marynarska 13, Mokotów'],
+  ['billiards','Złota Bila','Blue City, Al. Jerozolimskie 179, Ochota'],
+  ['fun','Black Cat Escape Room','Warszawa'],
+  ['fun','House Escape','Warszawa'],
+  ['fun','Room Escape Warszawa','Warszawa'],
+  ['fun','Time Machine Minigolf','Warszawa']
+].map(([cat,name,loc])=>({
+  cat, name, loc,
+  id: 'p_' + name.toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/g,'_'),
+  mapsUri: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ' ' + loc + ' Warszawa')
+}));
+let plCat = 'all';
+let plQuery = '';
 let confirmed = null;
 const PERSON_NAMES = { michal: 'Michał', ona: 'Alicja' };
 
@@ -1257,51 +1303,7 @@ function exportConfirmedToIcs(){
 }
 
 // ---- Miejsca na randki (lista zaszyta w kodzie) ----
-const PLACE_CATS = [
-  { key:'all', label:'Wszystkie' },
-  { key:'restaurant', label:'Restauracje' },
-  { key:'cafe', label:'Kawiarnie' },
-  { key:'bowling', label:'Kręgle' },
-  { key:'billiards', label:'Bilard' },
-  { key:'fun', label:'Escape i minigolf' }
-];
-// [kategoria, nazwa, lokalizacja]
-const PLACES = [
-  ['restaurant','Concept 13','Bracka 9, Śródmieście'],
-  ['restaurant','Kiseki by Alon','Śródmieście'],
-  ['restaurant','OTO!SUSHI','Nowy Świat, Śródmieście'],
-  ['restaurant','Restauracja Polka','Stare Miasto'],
-  ['restaurant','Stary Dom','Mokotów'],
-  ['restaurant','Bistro de Paris','Śródmieście'],
-  ['restaurant','Hala Koszyki','Koszykowa 63, Śródmieście'],
-  ['restaurant','Browary Warszawskie','Grzybowska 60, Wola'],
-  ['restaurant','Koneser','Plac Konesera 1, Praga-Północ'],
-  ['cafe','Relaks','Puławska, Mokotów'],
-  ['cafe','STOR Cafe','Tamka, Powiśle'],
-  ['cafe','Coffeedesk','Wilcza, Śródmieście'],
-  ['cafe','Cafe Bristol','Krakowskie Przedmieście 42/44, Śródmieście'],
-  ['cafe','Charlotte','plac Zbawiciela 3/5, Śródmieście'],
-  ['cafe','Cafe Kafka','Oboźna 3, Śródmieście'],
-  ['bowling','Kręgielnia 7club','Jagiellońska, Praga-Północ'],
-  ['bowling','Kręgielnia OSIR Praga-Południe','Praga-Południe'],
-  ['bowling','Kręgielnia w Parku Kultury w Powsinie','Maczka 5, Powsin'],
-  ['billiards','Klub bilardowy Pictures','Obrazkowa 26, Włochy'],
-  ['billiards','Klub bilardowy Winner','Grójecka 19/25, Ochota'],
-  ['billiards','Klub bilardowy Land Club','Wałbrzyska 11, Mokotów'],
-  ['billiards','Klub bilardowy Billboard','Kasprzaka 7, Wola'],
-  ['billiards','House of Pool','Marynarska 13, Mokotów'],
-  ['billiards','Złota Bila','Blue City, Al. Jerozolimskie 179, Ochota'],
-  ['fun','Black Cat Escape Room','Warszawa'],
-  ['fun','House Escape','Warszawa'],
-  ['fun','Room Escape Warszawa','Warszawa'],
-  ['fun','Time Machine Minigolf','Warszawa']
-].map(([cat,name,loc])=>({
-  cat, name, loc,
-  id: 'p_' + name.toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/g,'_'),
-  mapsUri: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ' ' + loc + ' Warszawa')
-}));
-let plCat = 'all';
-let plQuery = '';
+
 
 function foldText(t){
   return t.toLowerCase().replace(/ł/g,'l').normalize('NFD').replace(/[̀-ͯ]/g,'');
