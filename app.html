@@ -1303,27 +1303,45 @@ const PLACES = [
 let plCat = 'all';
 let plQuery = '';
 
+function foldText(t){
+  return t.toLowerCase().replace(/ł/g,'l').normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
 function renderPlaces(){
   const chips = document.getElementById('plChips');
   chips.innerHTML = PLACE_CATS.map(c=>`<button type="button" class="pl-chip" data-k="${c.key}" aria-pressed="${plCat === c.key}">${c.label}</button>`).join('');
   chips.querySelectorAll('.pl-chip').forEach(b=>b.addEventListener('click', ()=>{
     plCat = b.dataset.k; renderPlaces();
   }));
-  const q = plQuery.toLowerCase();
-  const list = PLACES.filter(p=>(plCat === 'all' || p.cat === plCat) && (!q || (p.name + ' ' + p.loc).toLowerCase().includes(q)));
-  const el = document.getElementById('plResults');
-  if(!list.length){ el.innerHTML = '<div class="pl-note">Nic nie pasuje.</div>'; return; }
-  el.innerHTML = list.map(p=>{
+  const q = foldText(plQuery);
+  const words = q.split(/\s+/).filter(Boolean);
+  const list = PLACES.filter(p=>{
+    if(plCat !== 'all' && p.cat !== plCat) return false;
+    if(!words.length) return true;
+    const hay = foldText(p.name + ' ' + p.loc).split(/[^a-z0-9]+/);
+    return words.every(w=>hay.some(h=>h.startsWith(w)));
+  });
+  const custom = plQuery && !list.some(p=>foldText(p.name) === q)
+    ? { id:'custom', name:plQuery, loc:'', mapsUri:'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(plQuery + ' Warszawa') }
+    : null;
+  const canPick = confirmed && confirmed.date;
+  const row = (p, label)=>{
     const chosen = confirmed && confirmed.place && confirmed.place.name === p.name;
     return `<div class="pl-row">
       <div class="pl-info">
         <div class="pl-name"><a href="${escapeHtml(p.mapsUri)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a></div>
-        <div class="pl-meta">${escapeHtml(p.loc)}</div>
+        <div class="pl-meta">${escapeHtml(label || p.loc)}</div>
       </div>
-      ${confirmed && confirmed.date ? `<button type="button" class="pl-btn ${chosen ? 'on' : ''}" data-id="${p.id}" ${me ? '' : 'disabled'}>${chosen ? '✓ Na randce' : 'Na randkę'}</button>` : ''}
+      ${canPick ? `<button type="button" class="pl-btn ${chosen ? 'on' : ''}" data-id="${p.id}" ${me ? '' : 'disabled'}>${chosen ? '✓ Na randce' : 'Na randkę'}</button>` : ''}
     </div>`;
-  }).join('') + (confirmed && confirmed.date && !me ? '<div class="pl-note">Wybierz kto jesteś, żeby przypisać miejsce.</div>' : '');
-  el.querySelectorAll('.pl-btn').forEach(b=>b.addEventListener('click', ()=>setDatePlace(PLACES.find(p=>p.id === b.dataset.id))));
+  };
+  const el = document.getElementById('plResults');
+  el.innerHTML = (list.length ? list.map(p=>row(p)).join('') : '<div class="pl-note">Nie ma tego na liście.</div>')
+    + (custom ? row(custom, 'Własne miejsce — otwórz w Mapach Google') : '')
+    + (canPick && !me ? '<div class="pl-note">Wybierz kto jesteś, żeby przypisać miejsce.</div>' : '');
+  el.querySelectorAll('.pl-btn').forEach(b=>b.addEventListener('click', ()=>{
+    setDatePlace(b.dataset.id === 'custom' ? custom : PLACES.find(p=>p.id === b.dataset.id));
+  }));
 }
 
 async function setDatePlace(p){
