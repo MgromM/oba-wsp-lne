@@ -684,6 +684,30 @@
   }
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .idea-add button{ background:var(--michal); color:#1f2a10; } }
   :root[data-theme="dark"] .idea-add button{ background:var(--michal); color:#1f2a10; }
+  .pl-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .pl-chip{ border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:999px; padding:7px 12px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .pl-chip[aria-pressed="true"]{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .pl-chip[aria-pressed="true"]{ background:var(--michal); color:#12211c; border-color:var(--michal); } }
+  :root[data-theme="dark"] .pl-chip[aria-pressed="true"]{ background:var(--michal); color:#12211c; border-color:var(--michal); }
+  .pl-search{ display:flex; gap:8px; margin-bottom:10px; }
+  .pl-search input{ flex:1; min-width:0; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:9px; padding:10px 11px; font:inherit; font-size:15px; }
+  .pl-search button{ border:none; background:var(--ink); color:var(--paper); border-radius:9px; padding:10px 16px; font:inherit; font-weight:700; font-size:14px; cursor:pointer; }
+  .pl-more{ margin-top:10px; width:100%; background:transparent; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:10px 16px; font:inherit; font-weight:700; font-size:14px; cursor:pointer; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .pl-search button{ background:var(--michal); color:#12211c; } }
+  :root[data-theme="dark"] .pl-search button{ background:var(--michal); color:#12211c; }
+  .pl-row{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); }
+  .pl-row:last-child{ border-bottom:none; }
+  .pl-info{ flex:1; min-width:0; }
+  .pl-name{ font-weight:700; font-size:14px; overflow-wrap:anywhere; }
+  .pl-name a{ color:inherit; text-decoration:none; border-bottom:1px dotted var(--ink-soft); }
+  .pl-meta{ font-size:12px; color:var(--ink-soft); margin-top:2px; overflow-wrap:anywhere; font-weight:400; }
+  .pl-rating{ font-weight:800; color:var(--ink); }
+  .pl-btn{ flex:none; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:9px; padding:8px 11px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .pl-btn[disabled]{ opacity:.55; cursor:default; }
+  .pl-btn.on{ background:var(--michal); border-color:var(--michal); color:#fff; }
+  .pl-note{ font-size:13px; color:var(--ink-soft); padding:6px 0; }
+  .confirmed-place{ margin-top:6px; font-weight:700; font-size:14px; }
+  .confirmed-place a{ color:inherit; }
 </style>
 </head>
 <body>
@@ -785,6 +809,15 @@
 
   <div class="grid">
     <div>
+
+      <div class="card">
+        <h2>Miejsca na kawę i randki — Warszawa</h2>
+        <div class="pl-chips" id="plChips"></div>
+        <form class="pl-search" id="plForm">
+          <input type="search" id="plInput" maxlength="80" placeholder="Szukaj po nazwie lub dzielnicy...">
+        </form>
+        <div id="plResults"></div>
+      </div>
 
       <div class="card">
         <h2>Najbliższe wolne dni (oboje)</h2>
@@ -1203,6 +1236,7 @@ function buildIcs(confirmedDate){
     `DTSTART:${toIcsDate(startsAt)}`,
     `DTEND:${toIcsDate(endsAt)}`,
     'SUMMARY:Kawa',
+    ...(confirmedDate.place ? [`LOCATION:${(confirmedDate.place.name + (confirmedDate.place.address ? ', ' + confirmedDate.place.address : '')).replace(/[,;\\]/g, m=>'\\' + m)}`] : []),
     `DESCRIPTION:Wybrane przez ${PERSON_NAMES[confirmedDate.confirmedBy] || confirmedDate.confirmedBy}`,
     'END:VEVENT',
     'END:VCALENDAR'
@@ -1220,6 +1254,94 @@ function exportConfirmedToIcs(){
   a.click();
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 10000);
+}
+
+// ---- Miejsca na randki (lista zaszyta w kodzie) ----
+const PLACE_CATS = [
+  { key:'all', label:'Wszystkie' },
+  { key:'restaurant', label:'Restauracje' },
+  { key:'cafe', label:'Kawiarnie' },
+  { key:'bowling', label:'Kręgle' },
+  { key:'billiards', label:'Bilard' },
+  { key:'fun', label:'Escape i minigolf' }
+];
+// [kategoria, nazwa, lokalizacja]
+const PLACES = [
+  ['restaurant','Concept 13','Bracka 9, Śródmieście'],
+  ['restaurant','Kiseki by Alon','Śródmieście'],
+  ['restaurant','OTO!SUSHI','Nowy Świat, Śródmieście'],
+  ['restaurant','Restauracja Polka','Stare Miasto'],
+  ['restaurant','Stary Dom','Mokotów'],
+  ['restaurant','Bistro de Paris','Śródmieście'],
+  ['restaurant','Hala Koszyki','Koszykowa 63, Śródmieście'],
+  ['restaurant','Browary Warszawskie','Grzybowska 60, Wola'],
+  ['restaurant','Koneser','Plac Konesera 1, Praga-Północ'],
+  ['cafe','Relaks','Puławska, Mokotów'],
+  ['cafe','STOR Cafe','Tamka, Powiśle'],
+  ['cafe','Coffeedesk','Wilcza, Śródmieście'],
+  ['cafe','Cafe Bristol','Krakowskie Przedmieście 42/44, Śródmieście'],
+  ['cafe','Charlotte','plac Zbawiciela 3/5, Śródmieście'],
+  ['cafe','Cafe Kafka','Oboźna 3, Śródmieście'],
+  ['bowling','Kręgielnia 7club','Jagiellońska, Praga-Północ'],
+  ['bowling','Kręgielnia OSIR Praga-Południe','Praga-Południe'],
+  ['bowling','Kręgielnia w Parku Kultury w Powsinie','Maczka 5, Powsin'],
+  ['billiards','Klub bilardowy Pictures','Obrazkowa 26, Włochy'],
+  ['billiards','Klub bilardowy Winner','Grójecka 19/25, Ochota'],
+  ['billiards','Klub bilardowy Land Club','Wałbrzyska 11, Mokotów'],
+  ['billiards','Klub bilardowy Billboard','Kasprzaka 7, Wola'],
+  ['billiards','House of Pool','Marynarska 13, Mokotów'],
+  ['billiards','Złota Bila','Blue City, Al. Jerozolimskie 179, Ochota'],
+  ['fun','Black Cat Escape Room','Warszawa'],
+  ['fun','House Escape','Warszawa'],
+  ['fun','Room Escape Warszawa','Warszawa'],
+  ['fun','Time Machine Minigolf','Warszawa']
+].map(([cat,name,loc])=>({
+  cat, name, loc,
+  id: 'p_' + name.toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/g,'_'),
+  mapsUri: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ' ' + loc + ' Warszawa')
+}));
+let plCat = 'all';
+let plQuery = '';
+
+function renderPlaces(){
+  const chips = document.getElementById('plChips');
+  chips.innerHTML = PLACE_CATS.map(c=>`<button type="button" class="pl-chip" data-k="${c.key}" aria-pressed="${plCat === c.key}">${c.label}</button>`).join('');
+  chips.querySelectorAll('.pl-chip').forEach(b=>b.addEventListener('click', ()=>{
+    plCat = b.dataset.k; renderPlaces();
+  }));
+  const q = plQuery.toLowerCase();
+  const list = PLACES.filter(p=>(plCat === 'all' || p.cat === plCat) && (!q || (p.name + ' ' + p.loc).toLowerCase().includes(q)));
+  const el = document.getElementById('plResults');
+  if(!list.length){ el.innerHTML = '<div class="pl-note">Nic nie pasuje.</div>'; return; }
+  el.innerHTML = list.map(p=>{
+    const chosen = confirmed && confirmed.place && confirmed.place.name === p.name;
+    return `<div class="pl-row">
+      <div class="pl-info">
+        <div class="pl-name"><a href="${escapeHtml(p.mapsUri)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a></div>
+        <div class="pl-meta">${escapeHtml(p.loc)}</div>
+      </div>
+      ${confirmed && confirmed.date ? `<button type="button" class="pl-btn ${chosen ? 'on' : ''}" data-id="${p.id}" ${me ? '' : 'disabled'}>${chosen ? '✓ Na randce' : 'Na randkę'}</button>` : ''}
+    </div>`;
+  }).join('') + (confirmed && confirmed.date && !me ? '<div class="pl-note">Wybierz kto jesteś, żeby przypisać miejsce.</div>' : '');
+  el.querySelectorAll('.pl-btn').forEach(b=>b.addEventListener('click', ()=>setDatePlace(PLACES.find(p=>p.id === b.dataset.id))));
+}
+
+async function setDatePlace(p){
+  if(!me || !confirmed || !p) return;
+  const same = confirmed.place && confirmed.place.name === p.name;
+  confirmed = { ...confirmed, place: same ? null : { name: p.name, address: p.loc, mapsUri: p.mapsUri } };
+  renderConfirmed(); renderPlaces();
+  try{ await setDoc(confirmedDocRef, confirmed); }
+  catch(e){ setStatus('Nie zapisano na serwerze — spróbuj ponownie.'); }
+}
+
+document.getElementById('plForm').addEventListener('submit', e=>e.preventDefault());
+document.getElementById('plInput').addEventListener('input', e=>{ plQuery = e.target.value.trim(); renderPlaces(); });
+
+function confirmedPlaceHtml(){
+  const pl = confirmed && confirmed.place;
+  if(!pl) return '';
+  return `<div class="confirmed-place">📍 ${pl.mapsUri ? `<a href="${escapeHtml(pl.mapsUri)}" target="_blank" rel="noopener">${escapeHtml(pl.name)}</a>` : escapeHtml(pl.name)}${pl.address ? `<div class="confirmed-meta">${escapeHtml(pl.address)}</div>` : ''}</div>`;
 }
 
 function renderConfirmed(){
@@ -1243,6 +1365,7 @@ function renderConfirmed(){
     body.innerHTML = `
       <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
       <div class="confirmed-meta">${heading}${confirmed.city ? ` · ${escapeHtml(confirmed.city)}` : ''}</div>
+      ${confirmedPlaceHtml()}
       ${countdown ? `<div class="confirmed-countdown" id="confirmedCountdown">${countdown}</div>` : ''}
       <div class="confirmed-actions">
         ${iAmProposer
@@ -1269,6 +1392,7 @@ function renderConfirmed(){
   body.innerHTML = `
     <div class="confirmed-date">${d.toLocaleDateString('pl-PL',{weekday:'long'})}, ${fmt(d)}</div>
     <div class="confirmed-meta">Wybrane przez ${PERSON_NAMES[confirmed.confirmedBy] || confirmed.confirmedBy}</div>
+    ${confirmedPlaceHtml()}
     ${countdown ? `<div class="confirmed-countdown" id="confirmedCountdown">${countdown}</div>` : ''}
     <div class="confirmed-actions">
       <button class="ics-btn" id="icsBtn">Dodaj do kalendarza</button>
@@ -1624,6 +1748,7 @@ function renderAll(){
   renderPlannerHero();
   renderCalendar();
   renderConfirmed();
+  renderPlaces();
 }
 
 
@@ -1741,6 +1866,7 @@ function init(){
     previousConfirmedStatus = newStatus;
     firstConfirmedSnapshot = false;
     renderConfirmed();
+    renderPlaces();
     renderFreeList();
     renderCalendar();
     renderPlannerHero();
