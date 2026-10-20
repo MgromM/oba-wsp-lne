@@ -704,7 +704,18 @@
   .pl-meta{ font-size:12px; color:var(--ink-soft); margin-top:2px; overflow-wrap:anywhere; font-weight:400; }
   .pl-rating{ font-weight:800; color:var(--ink); }
   .pl-btn{ flex:none; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:9px; padding:8px 11px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
-  @media (max-width:560px){ .pl-name{ font-size:13.5px; } .pl-btn{ padding:7px 9px; font-size:12px; } .pl-search input{ font-size:16px; } }
+  .pl-btn{ white-space:nowrap; min-height:38px; }
+  .pl-chip{ min-height:38px; }
+  .pl-count{ font-size:12px; color:var(--ink-soft); margin:0 0 4px; }
+  .pl-more{ min-height:44px; margin-top:8px; }
+  .pl-less{ display:block; margin:6px auto 0; border:none; background:transparent; color:var(--ink-soft); font:inherit; font-size:13px; text-decoration:underline; padding:8px 12px; cursor:pointer; }
+  @media (max-width:560px){
+    .pl-name{ font-size:14px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .pl-meta{ font-size:12px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+    .pl-row{ gap:8px; padding:9px 0; }
+    .pl-btn{ padding:8px 10px; font-size:12px; }
+    .pl-search input{ font-size:16px; min-height:44px; }
+  }
   .pl-btn[disabled]{ opacity:.55; cursor:default; }
   .pl-btn.on{ background:var(--michal); border-color:var(--michal); color:#fff; }
   .pl-note{ font-size:13px; color:var(--ink-soft); padding:6px 0; }
@@ -1343,11 +1354,15 @@ function renderPlaces(){
   };
   const el = document.getElementById('plResults');
   const visible = list.slice(0, plShown);
+  const countHtml = list.length > PL_STEP ? `<div class="pl-count">${list.length} miejsc</div>` : '';
   const rest = list.length - visible.length;
-  el.innerHTML = (list.length ? visible.map(p=>row(p)).join('') : '<div class="pl-note">Nie ma tego na liście.</div>')
+  el.innerHTML = countHtml + (list.length ? visible.map(p=>row(p)).join('') : '<div class="pl-note">Nie ma tego na liście.</div>')
     + (rest > 0 ? `<button type="button" class="pl-more" id="plMore">Pokaż więcej (${rest})</button>` : '')
+    + (plShown > PL_STEP && list.length > PL_STEP ? '<button type="button" class="pl-less" id="plLess">Zwiń do 5</button>' : '')
     + (custom ? row(custom, 'Własne miejsce — otwórz w Mapach Google') : '')
     + (canPick && !me ? '<div class="pl-note">Wybierz kto jesteś, żeby przypisać miejsce.</div>' : '');
+  const less = document.getElementById('plLess');
+  if(less) less.addEventListener('click', ()=>{ plShown = PL_STEP; renderPlaces(); document.getElementById('plChips').scrollIntoView({ block:'nearest' }); });
   const more = document.getElementById('plMore');
   if(more) more.addEventListener('click', ()=>{ plShown += PL_STEP; renderPlaces(); });
   el.querySelectorAll('.pl-btn').forEach(b=>b.addEventListener('click', ()=>{
