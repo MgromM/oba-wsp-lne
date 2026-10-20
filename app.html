@@ -1324,8 +1324,8 @@ function renderPlaces(){
   const list = PLACES.filter(p=>{
     if(plCat !== 'all' && p.cat !== plCat) return false;
     if(!words.length) return true;
-    const hay = foldText(p.name + ' ' + p.loc).split(/[^a-z0-9]+/);
-    return words.every(w=>hay.some(h=>h.startsWith(w)));
+    if(!p.hay) p.hay = foldText(p.name + ' ' + p.loc).split(/[^a-z0-9]+/);
+    return words.every(w=>p.hay.some(h=>h.startsWith(w)));
   });
   const custom = plQuery && !list.some(p=>foldText(p.name) === q)
     ? { id:'custom', name:plQuery, loc:'', mapsUri:'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(plQuery + ' Warszawa') }
@@ -1354,6 +1354,27 @@ function renderPlaces(){
     setDatePlace(b.dataset.id === 'custom' ? custom : PLACES.find(p=>p.id === b.dataset.id));
   }));
 }
+
+function placeMapsUri(name, loc){
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ' ' + loc + ' Warszawa');
+}
+
+async function loadExtraPlaces(){
+  try{
+    const res = await fetch('places.json', { cache:'no-cache' });
+    if(!res.ok) return;
+    const rows = await res.json();
+    const known = new Set(PLACES.map(p=>foldText(p.name)));
+    rows.forEach(([cat, name, loc])=>{
+      const k = foldText(name);
+      if(known.has(k)) return;
+      known.add(k);
+      PLACES.push({ cat, name, loc, id:'o_' + PLACES.length, mapsUri: placeMapsUri(name, loc) });
+    });
+    renderPlaces();
+  }catch(e){}
+}
+loadExtraPlaces();
 
 async function setDatePlace(p){
   if(!me || !confirmed || !p) return;
