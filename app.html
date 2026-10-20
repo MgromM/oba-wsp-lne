@@ -684,8 +684,9 @@
   }
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .idea-add button{ background:var(--michal); color:#1f2a10; } }
   :root[data-theme="dark"] .idea-add button{ background:var(--michal); color:#1f2a10; }
-  .pl-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-  .pl-chip{ border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:999px; padding:7px 12px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .pl-chips{ display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; margin:0 -4px 10px; padding:0 4px 4px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .pl-chips::-webkit-scrollbar{ display:none; }
+  .pl-chip{ flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:999px; padding:7px 12px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
   .pl-chip[aria-pressed="true"]{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .pl-chip[aria-pressed="true"]{ background:var(--michal); color:#12211c; border-color:var(--michal); } }
   :root[data-theme="dark"] .pl-chip[aria-pressed="true"]{ background:var(--michal); color:#12211c; border-color:var(--michal); }
@@ -695,7 +696,7 @@
   .pl-more{ margin-top:10px; width:100%; background:transparent; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:10px 16px; font:inherit; font-weight:700; font-size:14px; cursor:pointer; }
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .pl-search button{ background:var(--michal); color:#12211c; } }
   :root[data-theme="dark"] .pl-search button{ background:var(--michal); color:#12211c; }
-  .pl-row{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); }
+  .pl-row{ display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid var(--line); }
   .pl-row:last-child{ border-bottom:none; }
   .pl-info{ flex:1; min-width:0; }
   .pl-name{ font-weight:700; font-size:14px; overflow-wrap:anywhere; }
@@ -703,6 +704,7 @@
   .pl-meta{ font-size:12px; color:var(--ink-soft); margin-top:2px; overflow-wrap:anywhere; font-weight:400; }
   .pl-rating{ font-weight:800; color:var(--ink); }
   .pl-btn{ flex:none; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:9px; padding:8px 11px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+  @media (max-width:560px){ .pl-name{ font-size:13.5px; } .pl-btn{ padding:7px 9px; font-size:12px; } .pl-search input{ font-size:16px; } }
   .pl-btn[disabled]{ opacity:.55; cursor:default; }
   .pl-btn.on{ background:var(--michal); border-color:var(--michal); color:#fff; }
   .pl-note{ font-size:13px; color:var(--ink-soft); padding:6px 0; }
@@ -949,6 +951,8 @@ const PLACES = [
 }));
 let plCat = 'all';
 let plQuery = '';
+let plShown = 5;
+const PL_STEP = 5;
 let confirmed = null;
 const PERSON_NAMES = { michal: 'Michał', ona: 'Alicja' };
 
@@ -1313,7 +1317,7 @@ function renderPlaces(){
   const chips = document.getElementById('plChips');
   chips.innerHTML = PLACE_CATS.map(c=>`<button type="button" class="pl-chip" data-k="${c.key}" aria-pressed="${plCat === c.key}">${c.label}</button>`).join('');
   chips.querySelectorAll('.pl-chip').forEach(b=>b.addEventListener('click', ()=>{
-    plCat = b.dataset.k; renderPlaces();
+    plCat = b.dataset.k; plShown = PL_STEP; renderPlaces();
   }));
   const q = foldText(plQuery);
   const words = q.split(/\s+/).filter(Boolean);
@@ -1338,9 +1342,14 @@ function renderPlaces(){
     </div>`;
   };
   const el = document.getElementById('plResults');
-  el.innerHTML = (list.length ? list.map(p=>row(p)).join('') : '<div class="pl-note">Nie ma tego na liście.</div>')
+  const visible = list.slice(0, plShown);
+  const rest = list.length - visible.length;
+  el.innerHTML = (list.length ? visible.map(p=>row(p)).join('') : '<div class="pl-note">Nie ma tego na liście.</div>')
+    + (rest > 0 ? `<button type="button" class="pl-more" id="plMore">Pokaż więcej (${rest})</button>` : '')
     + (custom ? row(custom, 'Własne miejsce — otwórz w Mapach Google') : '')
     + (canPick && !me ? '<div class="pl-note">Wybierz kto jesteś, żeby przypisać miejsce.</div>' : '');
+  const more = document.getElementById('plMore');
+  if(more) more.addEventListener('click', ()=>{ plShown += PL_STEP; renderPlaces(); });
   el.querySelectorAll('.pl-btn').forEach(b=>b.addEventListener('click', ()=>{
     setDatePlace(b.dataset.id === 'custom' ? custom : PLACES.find(p=>p.id === b.dataset.id));
   }));
@@ -1356,7 +1365,7 @@ async function setDatePlace(p){
 }
 
 document.getElementById('plForm').addEventListener('submit', e=>e.preventDefault());
-document.getElementById('plInput').addEventListener('input', e=>{ plQuery = e.target.value.trim(); renderPlaces(); });
+document.getElementById('plInput').addEventListener('input', e=>{ plQuery = e.target.value.trim(); plShown = PL_STEP; renderPlaces(); });
 
 function confirmedPlaceHtml(){
   const pl = confirmed && confirmed.place;
