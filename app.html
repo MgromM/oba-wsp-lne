@@ -716,6 +716,14 @@
     .pl-btn{ padding:8px 10px; font-size:12px; }
     .pl-search input{ font-size:16px; min-height:44px; }
   }
+  .film-row{ display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+  .film-row img, .film-noposter{ width:46px; height:69px; border-radius:6px; object-fit:cover; flex:none; background:var(--line); }
+  .film-info{ flex:1; min-width:0; }
+  .film-title{ font-weight:700; font-size:14px; line-height:1.25; overflow-wrap:anywhere; }
+  .film-meta{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .film-prov{ padding:8px 0 12px 56px; display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--line); }
+  .film-prov a{ border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:13px; font-weight:700; color:var(--ink); text-decoration:none; background:var(--paper); }
+  .film-credit{ font-size:11px; color:var(--ink-soft); margin-top:10px; }
   .pl-btn[disabled]{ opacity:.55; cursor:default; }
   .pl-btn.on{ background:var(--michal); border-color:var(--michal); color:#fff; }
   .pl-note{ font-size:13px; color:var(--ink-soft); padding:6px 0; }
@@ -887,6 +895,11 @@
         </form>
         <div id="plResults"></div>
       </div>
+
+      <details class="card details-card" id="filmCard">
+        <summary>Film na wieczór — gdzie obejrzeć</summary>
+        <div id="filmBody"></div>
+      </details>
     </div>
   </div>
 
@@ -961,6 +974,10 @@ const PLACES = [
 }));
 let plCat = 'all';
 let plQuery = '';
+// Film na wieczór: darmowy klucz TMDB (themoviedb.org → Ustawienia → API), bez karty.
+const TMDB_KEY = '';
+let films = [], filmPage = 0, filmTotal = 1, filmState = 'idle', filmOpenId = null;
+const filmProviders = {};
 let plShown = 5;
 const PL_STEP = 5;
 let confirmed = null;
@@ -1389,6 +1406,96 @@ async function loadExtraPlaces(){
   }catch(e){}
 }
 loadExtraPlaces();
+
+// ---- Film na wieczór (TMDB: aktualne filmy w streamingu w PL + gdzie je obejrzeć) ----
+const PROVIDER_SEARCH = {
+  'Netflix': q=>'https://www.netflix.com/search?q=' + q,
+  'Disney Plus': q=>'https://www.disneyplus.com/search?q=' + q,
+  'Amazon Prime Video': q=>'https://www.primevideo.com/search?phrase=' + q,
+  'Apple TV Plus': q=>'https://tv.apple.com/pl/search?term=' + q,
+  'SkyShowtime': q=>'https://www.skyshowtime.com/pl/search?q=' + q
+};
+
+function tmdb(path, params){
+  const u = new URL('https://api.themoviedb.org/3' + path);
+  u.searchParams.set('api_key', TMDB_KEY);
+  u.searchParams.set('language', 'pl-PL');
+  Object.entries(params || {}).forEach(([k, v])=>u.searchParams.set(k, v));
+  return fetch(u.toString()).then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); });
+}
+
+async function loadFilms(){
+  if(!TMDB_KEY){ filmState = 'nokey'; renderFilms(); return; }
+  if(filmState === 'loading' || filmPage >= filmTotal) return;
+  filmState = 'loading'; renderFilms();
+  try{
+    const since = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
+    const d = await tmdb('/discover/movie', {
+      watch_region:'PL', with_watch_monetization_types:'flatrate', sort_by:'popularity.desc',
+      'primary_release_date.gte': since, 'vote_count.gte':50, page: filmPage + 1
+    });
+    filmPage = d.page; filmTotal = d.total_pages;
+    const have = new Set(films.map(f=>f.id));
+    films = films.concat(d.results.filter(f=>!have.has(f.id)));
+    filmState = 'idle';
+  }catch(e){ filmState = 'error'; }
+  renderFilms();
+}
+
+async function toggleFilmProviders(id){
+  filmOpenId = filmOpenId === id ? null : id;
+  renderFilms();
+  if(filmOpenId && !filmProviders[id]){
+    try{
+      const d = await tmdb('/movie/' + id + '/watch/providers');
+      filmProviders[id] = (d.results && d.results.PL) || {};
+    }catch(e){ filmProviders[id] = { error:true }; }
+    renderFilms();
+  }
+}
+
+function renderFilms(){
+  const el = document.getElementById('filmBody');
+  if(filmState === 'nokey'){ el.innerHTML = '<div class="pl-note">Ta funkcja czeka na darmowy klucz TMDB (stała TMDB_KEY w app.html).</div>'; return; }
+  if(filmState === 'error' && !films.length){ el.innerHTML = '<div class="pl-note">Nie udało się pobrać filmów — spróbuj później.</div>'; return; }
+  if(!films.length){ el.innerHTML = '<div class="pl-note">Szukam…</div>'; return; }
+  el.innerHTML = films.map(f=>{
+    const year = (f.release_date || '').slice(0, 4);
+    const open = filmOpenId === f.id;
+    let prov = '';
+    if(open){
+      const pr = filmProviders[f.id];
+      if(!pr){ prov = '<div class="film-prov">Sprawdzam…</div>'; }
+      else if(pr.error){ prov = '<div class="film-prov">Nie udało się sprawdzić — spróbuj ponownie.</div>'; }
+      else{
+        const q = encodeURIComponent(f.title);
+        const list = (pr.flatrate || []).map(p=>{
+          const url = (PROVIDER_SEARCH[p.provider_name] || (()=>pr.link))(q);
+          return url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(p.provider_name)}</a>` : '';
+        }).join('');
+        const all = pr.link ? `<a href="${escapeHtml(pr.link)}" target="_blank" rel="noopener">Wszystkie opcje</a>` : '';
+        prov = `<div class="film-prov">${list || 'Brak w abonamentach w Polsce.'}${list ? all : all}</div>`;
+      }
+    }
+    return `<div class="film-row">
+      ${f.poster_path ? `<img src="https://image.tmdb.org/t/p/w92${f.poster_path}" alt="" loading="lazy">` : '<div class="film-noposter"></div>'}
+      <div class="film-info">
+        <div class="film-title">${escapeHtml(f.title)}</div>
+        <div class="film-meta">${year}${f.vote_average ? ' · ★ ' + f.vote_average.toFixed(1).replace('.', ',') : ''}</div>
+      </div>
+      <button type="button" class="pl-btn ${open ? 'on' : ''}" data-id="${f.id}">${open ? 'Zwiń' : 'Gdzie obejrzeć'}</button>
+    </div>${prov}`;
+  }).join('')
+    + (filmPage < filmTotal ? `<button type="button" class="pl-more" id="filmMore" ${filmState === 'loading' ? 'disabled' : ''}>Pokaż więcej</button>` : '')
+    + '<div class="film-credit">Dane: TMDB. Dostępność w streamingu: JustWatch.</div>';
+  el.querySelectorAll('.film-row .pl-btn').forEach(b=>b.addEventListener('click', ()=>toggleFilmProviders(+b.dataset.id)));
+  const more = document.getElementById('filmMore');
+  if(more) more.addEventListener('click', loadFilms);
+}
+
+document.getElementById('filmCard').addEventListener('toggle', e=>{
+  if(e.target.open && !films.length) loadFilms();
+});
 
 async function setDatePlace(p){
   if(!me || !confirmed || !p) return;
